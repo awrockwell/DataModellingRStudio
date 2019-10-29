@@ -1,0 +1,671 @@
+---
+title: "Assignment 4 Aaron Rockwell"
+author: "Aaron Rockwell"
+date: "10/13/2019"
+output: pdf_document
+
+---
+
+
+## Problem 1
+
+1- Refer to the Production Time data set.
+
+   a) Prepare a scatter plot of the data. Does a linear relation appear adequate here? Would a transformation on X or Y be more appropriate here? Why?
+
+```{r problem 1 a}
+#install.packages("MASS")
+library("MASS")
+
+ProdTime.df = data.frame(read.csv("Production Time.csv"))
+
+plot(ProdTime.df$X, ProdTime.df$Y)
+
+```
+
+## Problem 1 a Answer
+
+The data looks logarithmic, a linear relation could work depending on the use of the model, but a transformation would be preferable for a more accurate model. Transforming either would be okay, one would be a square root function (X) and the other an exponential (Y). 
+
+
+
+   b) Use the $X' = \sqrt{X}$ transformation and obtain the estimated linear regression function for the transformed data.
+
+```{r problem 1 b}
+
+ProdTime.Trans.df = ProdTime.df
+
+ProdTime.Trans.df$X = sqrt(ProdTime.Trans.df$X)
+
+ProdTime.reg = lm(ProdTime.Trans.df$Y ~ ProdTime.Trans.df$X)
+
+ProdTime.reg
+
+```
+
+## Problem 1 b Answer
+
+$\hat{Y}=$ 3.624X + 1.255 
+
+   c) Plot the estimated regression line and the transformed data. Does the regression line appear to be a good fit to the transformed data?
+
+```{r problem 1 c}
+
+with(ProdTime.Trans.df, plot(X, Y))
+	abline(ProdTime.reg)
+
+```
+
+## Problem 1 c Answer
+
+Yes, the fitted line appears to be a good fit for the data.
+
+
+   d) Obtain the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show?
+
+```{r problem 1 d}
+ 
+
+plot(ProdTime.reg$residuals, ProdTime.reg$fitted.values)
+
+ProdTime.std = rstandard(ProdTime.reg)
+qqnorm(ProdTime.std)
+qqline(ProdTime.std)
+
+
+```
+
+## Problem 1 d Answer
+
+There appears to be one outlier, but the data and QQ plot shows a good fit. 
+
+
+   e) Express the estimated regression function in the original units.
+
+```{r problem 1 e}
+
+ProdTime.reg
+
+```
+
+## Problem 1 e Answer
+
+$\hat{Y} = 3.624 \sqrt{X} + 1.255$
+
+
+
+\newpage
+## Problem 2
+
+2- Refer to Solution Concentration data set.
+
+   a) Fit a linear regression function. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show?
+
+```{r problem 2 a}
+ 
+SolConc.df = data.frame(read.csv("Solution Concentration.csv"))
+
+SolConc.reg = lm(Y~X, data= SolConc.df)
+
+plot(SolConc.reg)
+
+```
+
+## Problem 2 a Answer
+
+The residuals vs fitted plot have a pattern, which would point to the data being non-linear, the QQ plot points to this as well by not having a straight line.
+
+
+   b) Prepare a scatter plot of the data. What transformation of Y might you try to achieve constant variance and linearity?
+
+```{r problem 2 b}
+plot(SolConc.df$X, SolConc.df$Y)
+
+```
+
+## Problem 2 b Answer
+
+Would try a Box-Cox power transformation because the relationship appears exponential. 
+
+
+   c) Use the Box-Cox procedure and standardization (3.36) to find an appropriate power transformation by using $\lambda$ = -.2, -.1, 0, .1, .2. What transformation of Y is suggested?
+
+```{r problem 2 c}
+
+SolConc.reg = lm(Y~X, data= SolConc.df)
+boxcox(SolConc.reg)
+
+for (x in c(-.2,-.1,0,.1,.2)){
+   SolConc.trans.df = SolConc.df
+   SolConc.trans.df$Y = SolConc.trans.df$Y^x
+   plot(SolConc.trans.df$X, SolConc.trans.df$Y)
+   SolCol.reg = lm(SolConc.trans.df$Y~SolConc.trans.df$X)
+   summary(SolCol.reg)$r.square
+   
+   print(x)
+   SSE = sum((fitted(SolCol.reg) - mean(SolConc.trans.df$Y))^2)
+   print(SSE)
+   print(" ")
+
+   }
+
+```
+
+## Problem 2 c Answer:
+
+Of the five options, .1 appears to have the best fit with the smallest SSE. This makes sense because using the Box-Cox function, the apex for lambda is around .04.
+
+
+   d) Use the transformation Y' = log Y and obtain the estimated linear regression function for the transformed data.
+
+```{r problem 2 d}
+
+SolConc.trans.df = SolConc.df
+
+SolConc.trans.df$Y = log10(SolConc.trans.df$Y)
+
+SolCol.reg = lm(SolConc.trans.df$Y~SolConc.trans.df$X)
+
+SolCol.reg
+
+```
+
+## Problem 2 d Answer:
+
+$log(\hat{Y}) = \hat{Y'}$
+$\hat{Y'} = -0.1954X + 0.6549$ 
+
+
+   e) Plot the estimated regression line and the transformed data. Does the regression line appear to be a good fit to the transformed data?
+
+```{r problem 2 e}
+
+plot(SolConc.trans.df$X, SolConc.trans.df$Y)
+   abline(SolCol.reg)
+
+```
+
+## Problem 2 e Answer:
+The line looks like a good fit, better than the untransformed model.
+
+
+
+   f) Obtain the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show?
+
+```{r problem 2 f}
+ 
+plot(SolCol.reg)
+
+```
+
+## Problem 2 f Answer:
+
+The residual vs fitted plot shows a slight curved pattern and the QQ plot is not a optimal line but overall a good model. 
+
+
+
+   g) Express the estimated regression function in the original units.
+
+```{r problem 2 g}
+ 
+SolCol.reg
+
+```
+
+## Problem 2 g Solution:
+
+$log(\hat{Y}) = \hat{Y'}$
+
+$\hat{Y'} = -0.1954X + 0.6549$  
+
+$log(\hat{Y}) = -0.1954X + 0.6549$
+
+$\hat{Y} = 10^{-0.1954X + 0.6549}$ 
+
+$\hat{Y} = 10^{-0.1954X} 10^{0.6549}$
+
+$\hat{Y} = 10^{-0.1954X} 4.51751912676304$
+
+$\hat{Y} = 0.637675894432609^{X} 4.51751912676304$
+
+Round to original units length:
+
+$\hat{Y} = 0.6377^{X} 4.5175$
+
+\newpage
+## Problem 3
+
+3- Refer to Crime rate data set.
+
+   a) Fit a linear regression function. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show?
+
+```{r problem 3 a}
+CrimeRate.df = data.frame(read.csv("Crime Rate.csv"))
+
+CrimeRate.reg = lm(Y~X, data = CrimeRate.df)
+
+plot(CrimeRate.reg)
+
+```
+
+## Problem 3 a Answer
+
+The two plots show that the fit is a good model, residuals vs fitted is close to being a straight horizontal line and QQ plot is close to being a straight line as well.
+
+   b) Conduct the Brown-Forsythe test to determine whether or not the error variance varies with the level of X. Divide the data into the two groups, X $\leq$ 69, X > 69, and use $\alpha$= .05. State the decision rule and conclusion. Does your conclusion support your preliminary findings in part (a)?
+
+```{r problem 3 b}
+
+CrimeRate.df$resid = NA
+CrimeRate.df$resid = CrimeRate.reg$resid
+
+CrimeRate.leq69.df = CrimeRate.df[CrimeRate.df$X <= 69, ]
+CrimeRate.greater69.df = CrimeRate.df[CrimeRate.df$X > 69, ]
+
+nrow(CrimeRate.leq69.df)
+nrow(CrimeRate.greater69.df)
+
+d1 = mean(abs(CrimeRate.leq69.df$resid - median(CrimeRate.leq69.df$resid)))
+
+d2 = mean(abs(CrimeRate.greater69.df$resid - median(CrimeRate.greater69.df$resid)))
+
+d1
+d2
+
+#s^2
+
+s.sqr = (sum((abs(CrimeRate.leq69.df$resid - median(CrimeRate.leq69.df$resid))-d1)^2) + sum((abs(CrimeRate.greater69.df$resid - median(CrimeRate.greater69.df$resid))-d2)^2))/(84-2)
+
+#sqrt to find s
+sqrt(s.sqr)
+
+```
+
+$n_1=8$
+
+$n_2=76$
+
+$d_1=1751.872$
+
+$d_2=1927.083$
+
+$s=1327.772$
+
+$$t^*_{BF} = \frac{\overline{d}_1-\overline{d}_2}{s\sqrt{\frac{1}{n_1}+\frac{1}{n_2}}}$$
+$$t^*_{BF} = \frac{1751.872-1927.083}{1327.772\sqrt{\frac{1}{8}+\frac{1}{76}}}$$
+
+$$t^*_{BF} = \frac{-175.211}{493.5275}=-.35502$$
+```{r problem 3 b part2}
+
+qt(.975, 84-2)
+
+```
+
+## Problem 3 b Answer
+
+If $t^*_{BF} \leq 1.989319$, conclude the error variance is constant
+
+If $t^*_{BF}> 1.989319$, conclude the error variance is not constant 
+
+Thus, we conclude the error variance is constant and this is consistent with previous question's conclusion.
+
+
+   c) Conduct the Breusch-Pagan test to determine whether or not the error variance varies with the level of X. Use $\alpha$= .05. State the alternatives. decision rule, and conclusion. Is your conclusion consistent with your preliminary findings in part (a and b)?
+
+$$X^2_{BP} = \frac{SSR^*}{2} \div \left(\frac{SSE}{n}\right)^2$$
+
+```{r problem 3 c}
+
+CrimeRate.df = data.frame(read.csv("Crime Rate.csv"))
+
+CrimeRate.reg = lm(Y~X, data = CrimeRate.df)
+
+anova(CrimeRate.reg)
+
+
+```
+SSE: 93462942
+SSR: 455273165
+n = 84
+
+$$X^2_{BP} = \frac{455273165}{2} \div \left(\frac{93462942}{84}\right)^2$$
+```{r problem 3 c part 2}
+(455273165/2)/((93462942/84)^2)
+qchisq(.95, df=1) 
+```
+
+## Problem 3 c Answer
+
+$\chi^2 (.95; 1) = 3.841$. Since $X^2_{BP}$ = 0.0001838746 < 3.841, we conclude $H_0$, that the error variance is constant. This is consistent with the previous two questions' conclusions.
+
+
+\newpage
+## Problem 4
+
+4- Refer to Plastic Hardness dataset.
+
+   a) Fit a linear regression function. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show?
+
+```{r problem 4 a}
+PlasHard.df = data.frame(read.csv("Plastic Hardness.csv"))
+
+plot(PlasHard.df)
+
+PlasHard.reg = lm(Y~X, data = PlasHard.df)
+
+plot(PlasHard.reg)
+
+```
+
+## Problem 4 a Answer
+
+The QQ plot shows a pattern of small waves and the Residuals vs Fitted shows four columns pointing to the X values being discrete. Even with that the QQ is a generally straight line with the residuals. 
+
+
+   b) Obtain Bonferroni joint confidence intervals for $\beta_{0}$ and $\beta_{1}$, using a 90 percent family confidence coefficient. Interpret your confidence intervals.
+
+```{r problem 4 b}
+nrow(PlasHard.df) 
+
+PlasHard.reg
+
+# t(1-.10/4; n)
+qt(.975, 16-2)
+
+summary(PlasHard.reg)
+
+2.144787*2.65702
+2.144787*0.09039
+
+168.6 - 2.144787*2.65702
+168.6 + 2.144787*2.65702
+
+2.03438 - 2.144787*0.09039
+2.03438 + 2.144787*0.09039
+
+#confint(PlasHard.reg, adjust.method = "bonferroni")
+
+```
+
+## Problem 4 b Answer
+
+t = 2.144787
+
+$s\{b_0\} = 2.65702$
+
+$s\{b_1\} = 0.09039$
+
+$B_0 = 168.6 \pm 2.144787\times2.65702$
+
+$B_1 = 2.03438\pm 2.144787\times0.09039$
+
+$B_0 = 168.6 \pm 5.698742$
+
+$B_1 = 2.03438\pm 0.1938673$
+
+$B_0$ is between 162.9013 and 174.2987 and $B_1$, is between 1.840513 and 2.228247.
+The family confidence coefficient is at least .90 that the procedure leads to correct pairs of interval estimates. 
+
+
+
+   c) Are $b_0$ and $b_1$ positively or negatively correlated here? Is this reflected in your joint confidence intervals in part (a)
+
+```{r problem 4 c}
+ 
+mean(PlasHard.df$X)
+```
+
+## Problem 4 c Answer
+
+$\overline{X} = 28$ leading the to the conclusion that the correlation between $b_0$ and $b_1$ are negative. This is not shown in the joint confidence intervals. 
+
+
+
+   d) Management wishes to obtain interval estimates of the mean hardness when the elapsed time is 20, 30, and 40 hours, respectively. Calculate the desired confidence intervals using the Bonferroni procedure and a 90 percent family confidence coefficient. What is the meaning of the family confidence coefficient here?
+
+```{r problem 4 d}
+
+
+qt(.9833, 16-2)
+
+for (x in c(20,30,40)){
+   Xh = data.frame(X = x)
+   print(x)
+   print(predict.lm(PlasHard.reg, Xh, se.fit= TRUE))
+   }
+
+2.358773*1.084726
+2.358773*0.8284728
+2.358773*1.35289
+
+```
+
+## Problem 4 d Answer
+
+$X_h = 30; \{\hat{Y}_{h}\} = 209.2875 \pm 2.358773 \times 1.084726$
+
+$X_h = 40; \{\hat{Y}_{h}\} = 229.6312 \pm 2.358773 \times 0.8284728$
+
+$X_h = 50; \{\hat{Y}_{h}\} = 249.975 \pm 2.358773 \times 1.35289$
+
+$X_h = 30; \{\hat{Y}_{h}\} = 209.2875 \pm 2.558622$
+
+$X_h = 40; \{\hat{Y}_{h}\} = 229.6312 \pm 1.954179$
+
+$X_h = 50; \{\hat{Y}_{h}\} = 249.975 \pm 3.19116$
+
+The above confidence intervals, with 90 percent family confidence coefficient show the mean number of hardness for the elapsed times of Xh = 20, 30, and 40: 
+
+
+
+   e) Is the Bonferroni procedure employed in part (a) the most efficient one that could be employed here? Explain.
+
+## Problem 4 e Answer
+
+I would say no, a normal confidence interval using predict is faster to calculate and easier to explain and understand.
+
+
+   f) The next two test items will be measured after 30 and 40 hours of elapsed time, respectively. Predict the hardness for each of these two items, using the most efficient procedure and a 90 percent family confidence coefficient.
+
+```{r problem 4 f}
+for (x in c(30,40)){
+   Xh = data.frame(X = x)
+   print(x)
+   print(predict.lm(PlasHard.reg, Xh, interval = "predict",  level=.90))
+}
+
+```
+
+## Problem 4 f Answer
+
+$X_h = 30; \{\hat{Y}_{h}\}$ = 223.7512 to 235.5113
+
+$X_h = 40; \{\hat{Y}_{h}\}$ = 243.8005 to 256.1495
+
+
+
+\newpage
+## Problem 5
+
+5- Refer to the CDI data set. Consider the regression relation of number of active physicians to total population.
+
+   a) Obtain Bonferroni joint confidence intervals for $\beta_{0}$ and $\beta_{1}$ using a 95 percent family confidence coefficient.
+
+```{r problem 5 a}
+
+CDI.df = data.frame(read.csv("CDI.csv"))
+
+CDI.reg = lm(Number.of.active.physicians~Total.population, data = CDI.df)
+
+#plot(CDI.reg)
+
+nrow(CDI.df) 
+
+CDI.reg
+
+# t(1-.10/4; n), at 95 : t(1-.05/4; n)
+qt(.9875, 440-2)
+
+summary(CDI.reg)
+
+CDI.reg$coefficients[1] 
+
+CDI.reg$coefficients[2] 
+
+2.249135*34.74602255
+2.249135*0.00004837
+
+
+```
+
+## Problem 5 a Answer
+
+t = 2.249135
+
+$s\{b_0\} = 34.74602255$
+
+$s\{b_1\} = 0.00004837$
+
+$B_0 = -110.634777 \pm 2.249135\times34.74602255$
+
+$B_1 = 0.002795\pm 2.249135\times0.00004837$
+
+$B_0 = -110.634777 \pm 78.1485$
+
+$B_1 = 0.002795\pm 0.0001087907$
+
+
+   b) An investigator has suggested that $\beta_{0}$ should be -100 and $\beta_{0}$ should be .0028. Do the joint confidence intervals in part (a) support this view? Discuss.
+
+## Problem 5 b Answer
+
+Yes, the joint confidence supports this view, with -100 and .0028 falling within the expected means.
+
+
+   c) It is desired to estimate the expected number of active physicians for counties with total population of X = 500, 1000, 5000 thousand with family confidence coefficient .90. Which procedure, the Working-Hotelling procedure or the Bonferroni, is more efficient here?
+
+## Problem 5 c Answer
+
+Bonferroni is preferred because it to show the confidence of the selected predictions while the Working-Hotelling shows the confidence for all the means of the model.
+
+   d) Obtain the family of interval estimates required in part (c), using the more efficient procedure. Interpret your confidence intervals.
+
+```{r problem 5 d}
+ 
+qt(.9833, 440-2)
+
+for (x in c(500000,1000000,5000000)){
+   Xh = data.frame(Total.population = x)
+   print(x)
+   print(predict.lm(CDI.reg, Xh, se.fit= TRUE))
+   }
+
+# Used 500,1000,5000, questions appears to say 500000, 1000000,  5000000, unsure because of wording, so calculated both ways.
+#2.133971 * 34.7328
+#2.133971 * 34.71958
+#2.133971 * 34.6143
+
+2.133971 * 29.54146
+2.133971 * 41.32686
+2.133971 * 224.7274
+
+```
+
+## Problem 5 d Answer
+
+For 500,1000,5000, questions appears to say 500000, 1000000,  5000000, unsure because of wording so calculated both ways:
+
+$X_h = 500; \{\hat{Y}_{h}\} = -109.2371 \pm 2.133971 \times 34.7328$
+
+$X_h = 1000; \{\hat{Y}_{h}\} = -107.8394 \pm 2.133971 \times 34.71958$
+
+$X_h = 5000; \{\hat{Y}_{h}\} = -96.65765 \pm 2.133971 \times 34.6143$
+
+$X_h = 500; \{\hat{Y}_{h}\} = -109.2371 \pm 74.11879$
+
+$X_h = 1000; \{\hat{Y}_{h}\} = -107.8394 \pm 74.09058$
+
+$X_h = 5000; \{\hat{Y}_{h}\} = -96.65765 \pm 73.86591$
+
+500000, 1000000, 5000000:
+
+$X_h = 500000; \{\hat{Y}_{h}\} = 1287.078 \pm 2.133971 \times 29.54146$
+
+$X_h = 1000000; \{\hat{Y}_{h}\} = 2684.79 \pm 2.133971 \times 41.32686$
+
+$X_h = 5000000; \{\hat{Y}_{h}\} = 13866.49 \pm 2.133971 \times 224.7274$
+
+$X_h = 500000; \{\hat{Y}_{h}\} = 1287.078 \pm 63.04062$
+
+$X_h = 1000000; \{\hat{Y}_{h}\} = 2684.79 \pm 88.19032$
+
+$X_h = 5000000; \{\hat{Y}_{h}\} = 13866.49 \pm 479.5618$
+
+The confidence intervals show that using a small total population as the $X_h$, the number of physicians is negative, which is not a possibility in real life meaning the predictions are out of sample. The second set which shows feasible total populations falls within expectations of confidence.
+
+\newpage
+## Problem 6
+
+6- Refer to the SENIC data set. The average length of stay in a hospital (Y) is anticipated to be related to infection risk, available facilities and services, and routine chest X-ray ratio.
+
+   a) Regress average length of stay on each of the three predictor variables. State the estimated regression functions. 
+
+```{r problem 6 a}
+
+SENIC.df = data.frame(read.csv("SENIC.csv"))
+
+SENIC.IR.reg = lm(Length.of.stay~Infection.risk, data = SENIC.df)
+SENIC.AFaS.reg = lm(Length.of.stay~Available.facilities.and.services, data = SENIC.df)
+SENIC.XRay.reg = lm(Length.of.stay~Routine.chest.X.ray.ratio, data = SENIC.df)
+
+SENIC.IR.reg
+SENIC.AFaS.reg 
+SENIC.XRay.reg
+
+```
+
+## Problem 6 a Answer
+
+Infection.risk = X, Length.of.stay=Y
+
+$\hat{Y}=$ 0.7604X + 6.3368
+
+Available.facilities.and.services = X, Length.of.stay=Y
+
+$\hat{Y}=$ 0.04471X+7.71877  
+
+Routine.chest.X.ray.ratio = X, Length.of.stay=Y
+
+$\hat{Y}=$ 0.03776X+6.56637 
+
+   b) For each of the three fitted regression models, obtain the residuals and prepare a residual plot against X and a normal probability plot. Summarize your conclusions. 
+
+```{r problem 6 b}
+plot(SENIC.IR.reg)
+plot(SENIC.AFaS.reg)
+plot(SENIC.XRay.reg)
+```
+
+## Problem 6 b Answer
+
+All QQ plots have instance 47 and 112 as apparent outliers.From the Residuals vs Fitted plots, all appear linear, routine chest X-ray ratio has a slight bend that could mean exponentiation.
+
+   c) Obtain the fitted regression function for the relation between length of stay and infection risk after deleting cases 47 (X47 = 6.5, Y47 = 19.56) and 112 (X112 = 5.9, Y112 = 17.94). From this fitted regression function obtain separate 95 percent prediction intervals for new Y observations at X = 6.5 and X = 5.9, respectively. Do observations Y47 and Y112 fall outside these prediction intervals? Discuss the significance of this.
+
+```{r problem 6 c}
+SENIC.NoOutliers.df = SENIC.df[-c(47,112),]
+
+SENIC.df[c(47,112),]
+
+SENIC.NoOutliers.reg = lm(Length.of.stay~Infection.risk, data=SENIC.NoOutliers.df)
+
+Xh = data.frame(Infection.risk=6.5)
+
+predict(SENIC.NoOutliers.reg, data.frame(Infection.risk=6.5),  interval = "predict", level=.95)
+predict(SENIC.NoOutliers.reg, data.frame(Infection.risk=5.9),  interval = "predict", level=.95)
+
+```
+## Problem 6 c Answer
+Both of the values fall outside of the prediction intervals. For X=6.5, the prediction confidence range is 8.318631 to 13.30654, while the value in the original data was 19.56, well outside the prediction interval. For X=5.9, the prediction confidence range is 7.966822 to 12.92665, while the value in the original data was 17.94, well outside the prediction interval. This values would fall outside even a 99% prediction interval. This could be because a measurement error, or a predictive factor that we did not include in our model.
+
+

@@ -1,0 +1,292 @@
+---
+title: "Assignment 3"
+author: "Aaron Rockwell"
+date: "10/6/2019"
+output: pdf_document
+---
+
+## Problem 1: 
+
+1. Refer to the CDI data set. Using $R^2$ as the criterion, which predictor variable accounts for the largest reduction in the variability in the number of active physicians?
+
+```{r problem 1}
+
+CDI.df = data.frame(read.csv("CDI.csv"))
+
+CDI.reg.list = c("Column.Name", "R.Squared")
+
+# Turn off Scientific Notation 
+#options(scipen = 999, warn = -1)
+
+for(i in names(CDI.df)){
+  
+  if(i=="Number.of.active.physicians") next 
+  
+  CDI.reg.add = lm(CDI.df$Number.of.active.physicians ~ CDI.df[[i]])
+  R.Squared.Value = round(summary(CDI.reg.add)$r.squared, digits = 3)
+  CDI.reg.list  = rbind(CDI.reg.list, data.frame(Column.Name=i, R.Squared = R.Squared.Value))
+}
+
+
+CDI.reg.list = CDI.reg.list[-1,]
+CDI.reg.list$R.Squared = as.single(CDI.reg.list$R.Squared)
+
+
+head(CDI.reg.list[order(CDI.reg.list$R.Squared, decreasing=TRUE),])
+
+```
+## Problem 1 Answer
+
+Using $R^2$, Number.of.hospital.beds is the best predictor variable the accounts for the largest reduction in the variability with an $R^2$ of .903 (County can be excluded because it run multiple coefficients for each county.)
+
+\newpage
+## Problem 2
+
+2. Refer to the CDI data set in Appendix C.2 and Project l.44. Obtain a separate interval estimate of $\beta_1$, for each region. Use a 90 percent confidence coefficient in each case. Do the regression lines for the different regions appear to have similar slopes?
+
+```{r problem 2}
+
+# per capita income as Y and percentage of people with at least a bachelor as X.
+
+# Subset by regions
+CDI.Region1.df = subset(CDI.df, CDI.df$Geographic.region == 1)
+CDI.Region2.df = subset(CDI.df, CDI.df$Geographic.region == 2)
+CDI.Region3.df = subset(CDI.df, CDI.df$Geographic.region == 3)
+CDI.Region4.df = subset(CDI.df, CDI.df$Geographic.region == 4)
+
+CDI.Region1.reg = lm(Per.capita.income ~ Percent.bachelor.s.degrees, data=CDI.Region1.df)
+CDI.Region2.reg = lm(Per.capita.income ~ Percent.bachelor.s.degrees, data=CDI.Region2.df)
+CDI.Region3.reg = lm(Per.capita.income ~ Percent.bachelor.s.degrees, data=CDI.Region3.df)
+CDI.Region4.reg = lm(Per.capita.income ~ Percent.bachelor.s.degrees, data=CDI.Region4.df)
+
+#Plot regression vs data
+#with(CDI.Region1.df,plot(Percent.bachelor.s.degrees, Per.capita.income, main = "Region 1"))
+#   abline(CDI.Region1.reg)
+#with(CDI.Region2.df,plot(Percent.bachelor.s.degrees, Per.capita.income, main = "Region 2"))
+#   abline(CDI.Region2.reg)
+#with(CDI.Region3.df,plot(Percent.bachelor.s.degrees, Per.capita.income, main = "Region 3"))
+#   abline(CDI.Region3.reg)
+#with(CDI.Region4.df,plot(Percent.bachelor.s.degrees, Per.capita.income, main = "Region 4"))
+#   abline(CDI.Region4.reg)
+
+#Region 1
+CDI.Region1.reg$coefficients
+#Region 2
+CDI.Region2.reg$coefficients
+#Region 3
+CDI.Region3.reg$coefficients
+#Region 4
+CDI.Region4.reg$coefficients
+
+#Region 1
+confint(CDI.Region1.reg, parm="Percent.bachelor.s.degrees", level = 0.90)
+#Region 2
+confint(CDI.Region2.reg, parm="Percent.bachelor.s.degrees", level = 0.90)
+#Region 3
+confint(CDI.Region3.reg, parm="Percent.bachelor.s.degrees", level = 0.90)
+#Region 4
+confint(CDI.Region4.reg, parm="Percent.bachelor.s.degrees", level = 0.90)
+
+```
+## Problem 2 Answer
+
+$\beta_1$ :
+
+   + Region 1: 522.1588 
+
+   + Region 2: 238.6694 
+
+   + Region 3: 330.6117 
+
+   + Region 4: 440.3157
+
+   
+**90% Confidence Intervals:**
+
+   + 5 %,  95 %
+                               
+   + Region 1: 460.5177, 583.8
+                             
+   + Region 2: 193.4858, 283.853
+                               
+   + Region 3: 285.7076, 375.5158
+                               
+   + Region 4: 364.7585, 515.8729
+
+Using Per.capita.income as Y and Percent.bachelor.s.degrees as X, the regression lines for the different regions do not have similar slopes. 90% confidence intervals for region 1, 2, and 3 do not even overlap. Only similarity they all share is that their slopes are positive.
+
+
+\newpage
+## Problem 3
+
+3. Refer to GPA data:
+   a. Set up the ANOVA table.
+   
+```{r problem 3a}
+GPA.df = data.frame(read.csv("GPA.csv"))
+anova(lm(GPA~ACT, data=GPA.df))
+
+```
+## Problem 3 a Answer: 
+Table shown in output above.
+   
+   b. What is estimated by MSR in your ANOVA table? by MSE? Under what condition do MSR and MSE estimate the same quantity?
+
+## Problem 3 b Answer:   
+   MSR for the ANOVA table is 3.5878
+   MSE for the ANOVA table is 0.3883
+   
+   $MSR = \frac{SSR}{1}$
+
+   $MSE = \frac{SSE}{n-2}$
+
+   $SSE = \sum (Y_{i}-\hat{Y_i})^2$
+
+   $SSR = \sum(\hat{Y_{i}}-\overline{Y})^2$
+   
+   $MSR = MSE$
+
+   $\frac{SSR}{1} = \frac{SSE}{n-2}$
+
+   $\frac{\sum(\hat{Y_{i}}-\overline{Y})^2}{1} = \frac{\sum (Y_{i}-\hat{Y_i})^2}{n-2}$
+
+   $(n-2)\sum(\hat{Y_{i}}-\overline{Y})^2 = \sum (Y_{i}-\hat{Y_i})^2$   
+   
+If all values of $Y_{i}$ and $\hat{Y_i}$ are the same, the MSR and MSE will be equal. Also, when MSR is n-2 times smaller than MSE, the equation will balance, this occurs when n = 3 and all $Y_{i}$ are the same value.
+   
+
+   c. Conduct an F test of whether or not $\beta_1$ = 0. Control the $\alpha$ risk at .01. State the alternatives, decision rule, and conclusion.
+
+   $H_0: \beta_1 = 0$
+   $H_a: \beta_1 \neq 0$ 
+   
+$If F^* = F(1 - \alpha; 1, n - 2), conclude ~H_0$
+$If F^* > F(1 - \alpha; 1, n - 2), conclude ~H_a$ 
+```{r problem 3c}
+
+#MSR/MSE
+Ftest = 3.5878/0.3883
+Ftest
+
+MSRdf = 1
+MSEdf = 118
+
+qf(.99, df1=1, df2=118) 
+
+
+```
+## Problem 3 c Answer:   
+
+Our critical F value is 6.854641, and our F statistic being 9.239763, this is higher than our critical F value, so we reject the null and and accept $H_a: \beta_1 \neq 0$ that there is a significant connection between GPA and ACT score. 
+
+
+   d. What is the absolute magnitude of the reduction in the variation of Y when X is introduced into the regression model? What is the relative reduction? What is the name of the latter measure?
+```{r problem 3d}
+#2.9
+
+#SSTO = SSR + SSE
+#SSR = 3.588
+#SSE = 45.818
+#SSTO = 3.588 + 45.818
+R.Squared3d = 1 - 45.818 / (3.588 + 45.818)
+R.Squared3d
+```
+## Problem 3 d Answer: 
+
+SSR is the absolute magnitude of reduction being 3.588.
+
+Relative reduction is the same as the coefficient of determination ($R^2$)
+
+$R^2 = \frac{SSR}{SSTO} = 1 - \frac{SSE}{SSTO}$
+
+$R^2 = 0.07262276$
+
+
+   e. Obtain r and attach the appropriate sign.
+
+
+## Problem 3 e Answer: 
+$r=\pm\sqrt{R^2}$
+
+Since the slope of the regression is positive, $r=+\sqrt{0.07262276}$
+
+```{r problem 3e}
+sqrt(0.07262276)
+```
+r = +0.2694861
+
+
+   f. Which measure, $R^2$ or r, has the more clear-cut operational interpretation? Explain.
+
+## Problem 3 f Answer:
+
+$R^2$ is more clear cut, r is just correlation, $R^2$ shows variation of the accuracy of the linear model.
+
+\newpage
+## Problem 4
+
+4. Refer to Crime rate data. 
+   a. Compute the Pearson product-moment correlation coefficient r12.
+```{r problem 4a}
+CrimeRate.df = data.frame(read.csv("Crime Rate.csv"))
+
+MeanX = mean(CrimeRate.df$X)
+MeanY = mean(CrimeRate.df$Y)
+PearsonCorTop = sum((CrimeRate.df$X-MeanX)*(CrimeRate.df$Y-MeanY))
+PearsonCorBottom = sqrt(sum((CrimeRate.df$X-MeanX)^2)*sum((CrimeRate.df$Y-MeanY)^2))
+
+PearsonCorTop/PearsonCorBottom
+cor(CrimeRate.df, method="pearson")
+
+```
+## Problem 4 a Answer:
+Pearson Correlation is -.4127033.
+
+
+   b. Test whether crime rate and percentage of high school graduates are statistically independent in the population; use a $\alpha$ = .01. State the alternatives, decision rule, and conclusion.
+```{r problem 4b}
+qt(.99, 84-2) 
+
+
+abs((-.4127033 * sqrt(84-2))/sqrt(1-.4127033^2))
+
+```
+## Problem 4 b Answer:
+Our critical F value is 2.372687, and our F statistic being 4.102897, this is higher than our critical F value, so we reject the null and and accept $H_a: \beta_1 \neq 0$ that there is a significant connection between crime rate and percentage of high school graduates. 
+
+
+
+   c. Compute the Spearman rank correlation coefficient rs.
+```{r problem 4c}
+
+cor(CrimeRate.df, method="spearman")
+
+```
+## Problem 4 c Answer:
+Spearman rank correlation coefficient of the Crime Rate dataset is -.4259324.
+
+
+   d. Test by means of the Spearman rank correlation coefficient whether an association exists between crime rate and percentage of high school graduates. State the alternatives, decision rule, and conclusion.
+
+
+$H_0:$ There is no association between Y and X
+
+$H_a:$ There is an association between Y and X.
+
+
+$t^{*}= \frac{r_{s}\sqrt{n-2}}{\sqrt{1-r_{s}^2}}$
+
+
+```{r problem 4d}
+abs((-.4259324 * sqrt(84-2))/sqrt(1-.4259324^2))
+
+qt(.99, 84-2) 
+
+```
+## Problem 4 d Answer:
+
+At a $\alpha$ risk of .01, we reject the null (4.263013 > 2.372687) and accept $H_a$.
+
+
+
+

@@ -1,0 +1,356 @@
+---
+title: "Assignment 2"
+author: "Aaron Rockwell"
+date: "9/29/2019"
+output: pdf_document
+---
+
+## Executive Summary of Solutions (Full work is shown on following pages): 
+
+## Problem 1: 
+
+   a. Write down the likelihood function (5pts):
+\begin{equation*} \label{Likelihood Exec}
+\begin{split}
+L(\beta_{0}, \beta_{1}, \sigma^2) = \frac{1}{(2\pi\sigma^2)^{\frac{n}{2}}}exp \bigg[-\frac{1}{2\sigma^2}\sum_{i=1}^{n}(Y_1-\beta_0-\beta_1X_i)^2\bigg]
+\end{split}
+\end{equation*}
+
+   b. Find the MLE for $\beta_1$  and  $\sigma^2$ (10pts)
+$$\hat\beta_1 = \frac{\sum(X_i-\overline{X})(Y_i-\overline{Y})}{\sum(X_i-\overline{X})^2}$$
+$$\hat\sigma^2 = \frac{\sum(Y_i-\hat{Y}_i)^2}{n}$$
+
+## Problem 2
+   a. Obtain the least squares estimates of $\beta_0$ and $\beta_1$, and state the estimated regression function. (5pts)
+
+      + With ACT as dependent variable: $\beta_0$= 2.11405, $\beta_1$= .03883, $\hat{Y_i}=.03883 X_i + 2.11405$
+
+      + With GPA as dependent variable: $\beta_0$= 18.98, $\beta_1$= 1.87, $\hat{Y_i}= 1.87 X_i + 18.98$
+
+   b. Obtain a 99 percent confidence interval for $\beta_1$. Interpret your confidence interval. (5pts)
+
+      + With a 99% confidence interval of .005385614 to .07226864 for the ACT score to predict GPA; this shows that the model believes that the ACT can predict the GPA. If the model was reversed with GPA as the X, then the results would be the same.   
+   
+   c. Test, using the test statistic t*, whether or not a linear association exists between student's ACT score (X) and GPA at the end of the freshman year (Y). (5pts)
+
+      + With the t-test results of t = 19.044, df = 239 gives a p-value < 2.2e-16, generally accepted p-value for significance is .05, so the linear association between GPA and ACT score is strong.
+
+
+## Problem 3
+
+   a. Obtain a 95 percent interval estimate of the mean freshman GPA for students whose ACT test score is 28. Interpret your confidence interval. (5pts)
+
+      + There is a 95% confidence that the mean will fall between 3.061384 and 3.41033. With 95% confidence a student with an ACT score of 28 will be an B average student.
+
+   b. Mary Jones obtained a score of 28 on the entrance test. Predict her freshman GPA-using a 95% prediction interval. Interpret your prediction interval. (5pts)
+
+      + The 95% confidence interval range is from 1.959355 to 4.443063, it is assumed the max GPA is 4.0 out of the population (which is also 4.0), so the model is saying a the mean GPA of someone with an ACT score of 28 has a 95% chance of being greater than 1.959355 GPA (to 4.0).
+
+
+   c. Is the prediction interval in part (b) wider than the confidence interval in part (a)? Should it be? (5pts)
+      
+      + The interval in part (b) is wider than part (a) and it should be because when we already know the variable falls in the model, we known already know the available ranges versus a variable we are trying to predict.
+
+   d. Calculate 95% percent confidence band for the regression line when Xh = 28. Is your-confidence band wider at this point than the confidence interval in part (a)? Should it be? (5pts)
+      
+      + The band is 3.061384 to 3.341033, and is equal to part(a), this is because we are using the confidence interval instead of "predict" for the predict() function for this variable. If we used "predict" the bands would not have been equal.
+      
+
+## Problem 4
+4. Repeat question 3, by building the models on the development sample (a random sample of 70% of GPA data), and calculating MSE’s on the hold out sample (remainder 30% of the GPA data). 
+
+   + The MSE of the 30% sample (using set.seed as 42 and sample function) is 0.2892216.
+
+
+## Problem 5
+5. Five observations on Y are to be taken when X = 4, 8, 12, 16, and 20, respectively. The true regression function is E{Y} = 20 + 4X, and the $\epsilon_i$ are independent N(0, 25).
+
+   a. Generate five normal random numbers, with mean 0 and variance 25. Obtain the least squares estimates $\beta_0$ and $\beta_1$, when fitting a straight line to the five cases. Also calculate $\hat{Y}_h$ when $X_h$ = 10 and obtain a 95% confidence interval for E{$Y_h$} when $X_h$ = 10. (10 pts)
+
+      + $\beta_1 = 3.908023$
+      + $\beta_0 = 23.310249$
+      + 95% confidence interval is 48.49949 to 76.28146.
+      + $\hat{Y}_h = 62.39047$
+
+   b. Repeat part (a) 200 times, generating new random numbers each time. (15 pts)
+
+      + Random generated data is generated and displayed further in the document.
+  
+   c. Make a frequency distribution (in shown work near end of paper) of the 200 estimates $\beta_1$. Calculate the mean and standard deviation of the 200 estimates $\beta_1$. Are the results consistent with theoretical expectations? (10 pts)
+
+      + Mean = 3.981768, Standard Deviation = 0.3896045
+
+      + The frequency distribution looks like a normal distribution which makes sense because our error was normally distributed. The mean being close to 4.0 also is consistent with expectations because the actual linear model has 4.0 as the slope of the equation.
+
+   d. What proportion of the 200 confidence intervals for E{$\hat{Y}$} when $\hat{X}$ = 10 include E{$\hat{Y}$}? Is this result consistent with theoretical expectations? (10 pts)
+	
+      + The portion that fell within the limits of the 95% confidence interval (for set.seed(42)) was 192 out of 200, which is 96% of the time. This is consistent with what should have occured.
+
+
+
+
+\newpage
+
+## Problem 1
+
+1. The regression model we would like to study is:
+$Y_i=\beta_1X_i+\epsilon_i$ and $\epsilon_i iid$ ~ $N(0,\sigma^2)$
+
+a. Write down the likelihood function (5pts)
+
+\begin{equation*} \label{Likelihood}
+\begin{split}
+L(\beta_{0}, \beta_{1}, \sigma^2) & = \prod_{i=1}^{n} \frac{1}{(2\pi\sigma^2)^{\frac{1}{2}}}exp \bigg[-\frac{1}{2\sigma^2}(Y_1-\beta_0-\beta_1X_i)^2\bigg] \\
+& = \frac{1}{(2\pi\sigma^2)^{\frac{n}{2}}}exp \bigg[-\frac{1}{2\sigma^2}\sum_{i=1}^{n}(Y_1-\beta_0-\beta_1X_i)^2\bigg]
+\end{split}
+\end{equation*}
+ 
+b. Find the MLE for $\beta_1$  and  $\sigma^2$ (10pts)
+
+$$\hat\beta_1 = b_1$$
+    Therefore:
+$$\hat\beta_1 = b_1 = \frac{\sum(X_i-\overline{X})(Y_i-\overline{Y})}{\sum(X_i-\overline{X})^2}$$
+
+$$\hat\sigma^2 = \frac{\sum(Y_i-\hat{Y}_i)^2}{n}$$
+
+\newpage
+
+## Problem 2
+
+2. Refer to the Grade Point Average (GPA) date set attached below. 
+   
+```{r load GPA}
+GPA.df = read.csv("GPA.csv")
+
+```   
+   
+   a. Obtain the least squares estimates of $\beta_0$ and $\beta_1$, and state the estimated regression function. (5pts)
+   
+```{r GPA LSE}
+# ACT as dependent
+GPA.df.reg = lm(GPA ~ ACT, data = GPA.df)
+GPA.df.reg
+
+# GPA as dependent
+GPA.df.reg = lm(ACT ~ GPA, data = GPA.df)
+GPA.df.reg
+
+```      
+With ACT as dependent variable: 
+
+$\beta_0$= 2.11405
+
+$\beta_1$= .03883
+
+$\hat{Y_i}=.03883 X_i + 2.11405$
+
+
+With GPA as dependent variable:
+
+$\beta_0$= 18.98
+
+$\beta_1$= 1.87
+
+$\hat{Y_i}= 1.87 X_i + 18.98$
+
+   
+   b. Obtain a 99 percent confidence interval for $\beta_1$. Interpret your confidence interval. (5pts)
+
+```{r GPA Confidence Interval}
+GPA.df.reg = lm(GPA ~ ACT, data = GPA.df)
+confint(GPA.df.reg, parm="ACT", level = 0.99)
+
+```       
+With a 99% confidence interval of .005385614 to .07226864 for the ACT score to predict GPA; this shows that the model believes that the ACT can predict the GPA. If the model was reversed with GPA as the X, then the results would be the same.
+   
+   
+   c. Test, using the test statistic t*, whether or not a linear association exists between student's ACT score (X) and GPA at the end of the freshman year (Y). (5pts)
+
+```{r GPA ttest}
+t.test(GPA.df)
+```
+
+With the t-test results of t = 19.044, df = 239 gives a p-value < 2.2e-16, generally accepted p-value for significance is .05, so the linear association between GPA and ACT score is strong.
+
+
+\newpage
+
+
+## Problem 3
+
+3. Refer to the Grade Point Average (GPA) date set attached below. 
+   a. Obtain a 95 percent interval estimate of the mean freshman GPA for students whose ACT test score is 28. Interpret your confidence interval. (5pts)
+   
+```{r GPA 28 conf}
+GPA.ACT24.reg = lm(GPA ~ ACT , data = GPA.df)
+predict(GPA.ACT24.reg, GPA.df[which(GPA.df$ACT==28)[1],], interval = "confidence", level=.95)
+
+```   
+The confidence interval in the model for ACT score of 28, there is a 95% confidence that the mean will fall between 3.061384 and 3.41033. From the model, it can be said with 95% confidence that a student with an ACT score of 28 will be an B average student.
+
+
+   
+   b. Mary Jones obtained a score of 28 on the entrance test. Predict her freshman GPA-using a 95% prediction interval. Interpret your prediction interval. (5pts)
+```{r GPA 28 predict}
+Xh = data.frame(ACT = 28)
+predict(GPA.ACT24.reg, Xh, interval = "predict", level=.95)
+
+```   
+The 95% confidence interval range is from 1.959355 to 4.443063, it is assumed the max GPA is 4.0 out of the population (which is also 4.0), so the model is saying a the mean GPA of someone with an ACT score of 28 has a 95% chance of being greater than 1.959355 GPA (to 4.0).
+
+   
+   
+   c. Is the prediction interval in part (b) wider than the confidence interval in part (a)? Should it be? (5pts)
+The interval in part (b) is wider than part (a) and it should be because when we already know the variable falls in the model, we known already know the available ranges versus a variable we are trying to predict.
+
+   
+   
+   d. Calculate 95% percent confidence band for the regression line when Xh = 28. Is your confidence band wider at this point than the confidence interval in part (a)? Should it be? (5pts)
+```{r GPA conf 28}
+predict(GPA.ACT24.reg, Xh, interval = "confidence", level=.95)
+```   
+The band is 3.061384 to 3.341033, and is equal to part(a), this is because we are using the confidence interval instead of "predict" for the predict() function for this variable. If we used "predict" the bands would not have been equal.
+
+
+
+\newpage
+
+## Problem 4
+
+4. Repeat question 3, by building the models on the development sample (a random sample of 70% of GPA data), and calculating MSE’s on the hold out sample (remainder 30% of the GPA data). 
+
+```{r GPA data development training and testing}
+set.seed(42)
+print(nrow(GPA.df))
+print(nrow(GPA.df) * .7)
+
+rows = sample(nrow(GPA.df))
+GPA.df.shuffled = GPA.df[rows, ]
+
+GPA.df.shuffled.reg = lm(GPA ~ ACT, data = GPA.df.shuffled[1:84,])
+
+predict.GPA.df.shuffled.reg = predict(GPA.df.shuffled.reg, GPA.df.shuffled[85:120,])
+
+print(mean((GPA.df.shuffled[85:120,]$GPA - predict.GPA.df.shuffled.reg) ^ 2))
+
+
+```
+The MSE of all the 30% sample (using set.seed as 42) is 0.2892216. 
+
+
+\newpage
+
+## Problem 5
+
+5. Five observations on Y are to be taken when X = 4, 8, 12, 16, and 20, respectively. The true regression function is E{Y} = 20 + 4X, and the $\epsilon_i$ are independent N(0, 25).
+   
+   a. Generate five normal random numbers, with mean 0 and variance 25. Consider these random numbers as the error terms for the five Y observations at X = 4, 8, 12, 16, and 20 and calculate Y1, Y2, Y3, Y4 , and Y5. Obtain the least squares estimates $\beta_0$ and $\beta_1$, when fitting a straight line to the five cases. Also calculate $\hat{Y}_h$ when $X_h$ = 10 and obtain a 95% confidence interval for E{$Y_h$} when $X_h$ = 10. (10 pts)
+   
+   
+
+```{r Problem 5 a}   
+set.seed(42)
+
+randomerrors = c(rnorm(5, mean=0, sd=5))
+
+XValues = c(4, 8, 12, 16, 20)
+YValues = 0
+
+for (x in 1:5) YValues[x] =  XValues[x] * 4 + 20 + randomerrors[x]
+
+XY.reg = lm(YValues ~ XValues)
+
+XY.reg$coefficients
+
+P5.Xh = data.frame(XValues = 10)
+
+predict(XY.reg, P5.Xh, interval = "confidence", level=.95)
+
+``` 
+
+$\beta_1 = 3.908023$
+
+$\beta_0 = 23.310249$
+
+95% confidence interval is 48.49949 to 76.28146.
+
+\begin{equation*} \label{Likelihood Exec}
+\begin{split}
+\hat{Y}_h & = 3.908023X_h + 23.310249 \\
+& = 3.908023 * 10 + 23.310249 \\
+\hat{Y}_h & = 62.39047
+\end{split}
+\end{equation*}
+
+   
+   b. Repeat part (a) 200 times, generating new random numbers each time. (15 pts)
+
+```{r Problem 5 b}   
+
+set.seed(42)
+
+randomerrors = c(rnorm(5, mean=0, sd=5))
+
+XValues = c(4, 8, 12, 16, 20)
+P5.Xh = data.frame(XValues = 10)
+#XY.RND.df.combine = 0   
+
+for (y in 1:200){
+
+randomerrors = c(rnorm(5, mean=0, sd=5))
+
+      for (x in 1:5){YValues[x] =  XValues[x] * 4 + 20 + randomerrors[x]}
+      
+      XY.reg = lm(YValues ~ XValues)
+      
+      predict.values = predict(XY.reg, P5.Xh, interval = "confidence", level=.95)
+   
+      XY.RND.df = c(XY.reg$coefficients, predict.values)
+
+      names(XY.RND.df)[1]  = "Beta 0"
+      names(XY.RND.df)[2]  = "Beta 1"
+      names(XY.RND.df)[3]  = "fit"
+      names(XY.RND.df)[4]  = "low"
+      names(XY.RND.df)[5]  = "upr"
+   
+         if (y == 1) {
+            XY.RND.df.combine = XY.RND.df
+         } else { 
+            XY.RND.df.combine = rbind(XY.RND.df.combine, XY.RND.df)}
+}
+
+XY.RNDcmb.df = data.frame(XY.RND.df.combine)
+
+# Showing just first 6 rows for brevity
+head(XY.RNDcmb.df)
+``` 
+
+   c. Make a frequency distribution of the 200 estimates $\beta_1$. Calculate the mean and standard deviation of the 200 estimates $\beta_1$. Are the results consistent with theoretical expectations? (10 pts)
+	
+```{r Problem 5 c}   	
+hist(XY.RNDcmb.df$Beta.1, xlab = "Beta 1", main="Histogram of Beta 1 Frequency")
+print (mean(XY.RNDcmb.df$Beta.1))
+print (sd(XY.RNDcmb.df$Beta.1))
+```
+Mean = 3.981768
+Standard Deviation = 0.3896045
+
+The frequency distribution looks like a normal distribution which makes sense because our error was normally distributed. The mean being close to 4.0 also is consistent with expectations because the actual linear model has 4.0 as the slope of the equation.
+
+
+
+	d. What proportion of the 200 confidence intervals for E{$\hat{Y}$} when $\hat{X}$ = 10 include E{$\hat{Y}$}? Is this result consistent with theoretical expectations? (10 pts)
+	
+```{r Problem 5 d} 
+# E{Y} = 20 + 4X
+# E{Y} = 20 + 4 * 10
+# E{Y} = 60
+
+x = 0
+for (y in 1:200){
+   if (XY.RNDcmb.df$low[y] <= 60 & XY.RNDcmb.df$upr[y] >= 60) {x = x + 1}
+}
+print(x)
+print(x/200)
+```
+The portion that fell within the limits of the 95% confidence interval (for set.seed(42)) was 192 out of 200, which is 96% of the time. This is consistent with what should have occured.

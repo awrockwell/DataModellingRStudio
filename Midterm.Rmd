@@ -1,0 +1,89 @@
+---
+title: "Midterm"
+author: "Aaron Rockwell"
+date: "10/19/2019"
+output: pdf_document
+---
+
+
+## Problem 1
+
+```{Problem 1}
+library(knitr)
+n=120
+Xbar=28
+Ybar=3
+SXX=2340
+SYY=49
+SXY=92
+SSE=46
+
+b1= SXY/SXX  
+b0 =  Ybar-b1*Xbar
+MSE = SSE/(n-2)
+Var.b1 = MSE/SXX
+Var.bo= MSE*{1/n + Xbar^2 / SXX}
+sb1 = sqrt(Var.b1)
+sb0 = sqrt(Var.bo)
+tc=qt(1-0.05/2,n-2)
+cbind(b1-tc*sb1,b1+tc*sb1)
+cbind(b0-tc*sb0,b0+tc*sb0)
+```
+
+
+\newpage
+## Problem 2
+
+```{Problem 2}
+
+
+```
+
+
+\newpage
+## Problem 3
+
+```{Problem 3}
+
+
+```
+
+
+\newpage
+## Problem 4
+
+```{Problem 4}
+
+
+```
+
+
+\newpage
+## Problem 5
+
+```{Problem 5}
+
+
+```
+
+
+
+\newpage
+## Problem 6
+
+```{Problem 6}
+
+
+```
+
+
+
+
+\newpage
+## Problem 7
+
+```{Problem 7}
+
+
+```
+

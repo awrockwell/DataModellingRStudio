@@ -1,0 +1,33 @@
+---
+title: "Notes for Midterm"
+author: "Aaron Rockwell"
+date: "10/19/2019"
+output: pdf_document
+---
+
+Find least square estimation
+
+## Just beta0
+$$ Y_i = \beta_0  + \varepsilon_i$$
+$$Q=\sum(Y_i - Yhat_i)^2 = \sum (Y_i - \beta_0)^2 $$
+$$@Q/\beta_0=-2\sum (Y_i - \beta_0)= 0$$
+$$\beta_0 = \frac{sum(Y_i)}{n}=Ybar$$
+
+
+
+## Just X_1
+$$ Y_i = \beta_1X  + \varepsilon_i$$
+$$L =  \prod_{i=1}^n \frac{1}{\sqrt{2\pi\sigma^2}}exp\left(-\frac{(Y_i-\beta_1X_{i})^2}{2\sigma^2}\right) $$
+
+
+
+## Everything
+
+$$ Y_i = \beta_1X + \beta_0  + \varepsilon_i$$
+$$L =  \prod_{i=1}^n p(y_i|x_i;\beta_0,\beta_1,\sigma^2) = $$
+
+$$L =  \prod_{i=1}^n \frac{1}{\sqrt{2\pi\sigma^2}}exp\left(-\frac{(Y_i-(\beta_0+\beta_1X_{i}))^2}{2\sigma^2}\right) $$
+
+Log likelihood:
+
+$$Log L = -\frac{n}{2}log2\pi-\frac{n}{2}log\sigma^2 -\frac{1}{2\sigma^2} \sum_{i=1}^n (\beta_0+\beta_1X_{i}))^2 $$

@@ -1,0 +1,331 @@
+---
+title: "Assignment 1"
+author: "Aaron Rockwell"
+date: "9/22/2019"
+output: pdf_document
+---
+
+## Executive Summary of Solutions (Full work is shown on following pages): 
+
+## Problem 1: 
+Least square estimation for $\beta_0$ is: $\beta_0 = \overline{Y}$.
+
+## Problem 2: 
+2.)	The dataset teengamb concerns a study of teenage gambling in Britain. Make a numerical and graphical summary of the data, commenting on any features that you find interesting. Insights from teengamb dataset (graphs shown in following pages):
+
+ + Males from the study have a tendancy to gamble more than their female counterparts. The male median amount of money gambled falls in the upper range of the females 4th quartile, almost approaching the female maximum.
+
+
+ + The teenagers with the more affluent parents scored higher on the verbal questions. This make sense from logical perspective. The p-score of .00012 is small enough to believe this is not a coincidence. The adjusted $r^2$ of .2667 show significance but low enough to not be great for predictive modeling. 
+
+
+## Problem 3: 
+a.	Regress the number of active physicians on each of the three predictor variables and state the estimated regression functions:
+
+    + Total Population:
+        $\hat{Y_i} = (2.795e-03) X_i - (1.106e+02)$ or $\hat{Y_i} = 0.002795X_i - 110.6$
+        
+    + Number of Hospital Beds:
+        $\hat{Y_i} = 0.7431X_i - 95.9322$
+    
+    + Total Personal Income:
+        $\hat{Y_i} = 0.1317X_i - 48.3948$    
+                                                
+b.	Plot the three estimated regression functions and data on separate graphs (graphs shown in following pages). Does a linear regression relation appear to provide a good fit for each of the three predictor variables?
+
+    + **Yes**, for all three of the graphs the lines show a good fit with the data. This is even further noted by their high $r^2$ adjusted values of: Total Population: 0.8838027, Number of Hospital Beds: 0.903162, Total Personal Income: 0.8986829.
+ 
+c.	Calculate MSE for each of the three predictor variables. Which predictor variable leads to the smallest variability around the fitted regression line? Total Population MSE: 370511.7,  Number of Hospital Beds: 308781.9, Total Personal Income: 323064.2.
+    
+    + **Number of Hospital Beds** regression has the smallest variability.
+
+\newpage
+## Problem 4: 
+4.)	Repeat question 3, by building the models on the development sample (a random sample of 70% of CDI data), and calculating MSE’s on the hold out sample (remainder 30% of the CDI data). [With set.seed(42)]:
+
+ + Total Population:
+        MSE = 631336
+        
+ + Number of Hospital Beds:
+        MSE = 287525.2
+    
+ + Total Personal Income:
+        MSE = 562923.4 
+
+## Problem 5: 
+5.)	The dataset teengamb concerns a study of teenage gambling in Britain. 
+
+a.	Regress the expenditure on gambling (Y) on income (X). State the estimated regression function. Compute the mean and median of the residuals.
+  
+    + Regression function: $\hat{Y_i} = 5.520 X_i - 6.325$
+    
+    + Mean: -5.203801e-16 
+    
+    + Median: -3.757382
+
+b.	Which observation has the largest (positive) residual? Give the case number.
+
+    + The largest positive residual is **107.1197**, line item 24, where gamble was 156. 
+    
+\newpage
+## Install Packages:     
+
+```{r loadpackages}
+
+# install.packages("plyr")
+# install.packages("ggplot2")
+# install.packages("scatterplot3d")
+# install.packages("MASS")
+# install.packages("faraway")
+# install.packages("caTools")
+
+library("caTools")
+library("faraway")
+library("knitr")
+library("plyr")
+library("ggplot2")
+library("scatterplot3d")
+library("MASS")
+```
+
+
+\newpage
+## Problem 1: 
+1.)	For the regression model $Y_i=\beta_0+\epsilon_i$, derive the least square estimation for $\beta_0$? 
+
+
+\begin{equation*} \label{Problem 1, Least Square Estimation}
+\begin{split}
+Y_i=\beta_0+\epsilon_i \\ 
+E[\epsilon_i] = 0 \\
+E[Y_i] & = E[\beta_0+\epsilon_i] \\
+& = \beta_0+E[\epsilon_i] \\
+& = \beta_0 + 0 \\
+& =\beta_0 \\
+E[Y_i] & = \beta_0 = \overline{Y} \\
+\beta_0 = \overline{Y} 
+\end{split}
+\end{equation*}
+
+
+\newpage
+## Problem 2:
+2.)	The dataset teengamb (see below for the instructions in r) concerns a study of teenage gambling in Britain. Make a numerical and graphical summary of the data, commenting on any features that you find interesting. Limit the output you present to a quantity that a busy reader would find sufficient to get a basic understanding of the dataset.   
+
+```{r load}
+
+# Displays first and last 6 rows
+head(teengamb)
+
+# Numeric summaries
+summary(teengamb)
+
+# Graphical 
+plot(teengamb)
+```
+
+```{r comparisons}
+print("Female Gambing:")
+summary(teengamb$gamble [teengamb$sex == 1])
+print("Male Gambing:")
+summary(teengamb$gamble [teengamb$sex == 0])
+```
+As seen above, males from the study have a tendancy to gamble more than their female counterparts. The male median amount of money gambled falls in the upper range of the females 4th quartile, almost approaching the female maximum.
+
+```{r verbal vs status}
+print("Verbal vs Status:")
+with(teengamb, plot(status, verbal))
+	abline(lm(teengamb$verbal ~ teengamb$status))
+	
+summary(lm(teengamb$status ~ teengamb$verbal))
+```
+
+The teenagers with the more affluent parents scored higher on the verbal questions. This make sense from logical perspective. The p-score of .00012 is small enough to believe this is not a coincidence. The adjusted $r^2$ of .2667 show significance but low enough to not be great for predictive modeling. 
+
+
+\newpage
+## Problem 3:
+
+3.)	Refer to the CDI data set. The number of active physicians in a CDI (Y) is expected to be related to total population, number of hospital beds, and total personal income. 
+
+a.	Regress the number of active physicians in turn on each of the three predictor variables. State the estimated regression functions.
+
+```{r showCDIdata}
+CDI.data = read.csv("CDI.csv")
+
+
+CDI.data.tpreg = lm(CDI.data$Number.of.active.physicians ~ CDI.data$Total.population)
+CDI.data.tpreg
+
+CDI.data.hbreg = lm(CDI.data$Number.of.active.physicians ~ CDI.data$Number.of.hospital.beds)
+CDI.data.hbreg
+
+CDI.data.pireg = lm(CDI.data$Number.of.active.physicians ~ CDI.data$Total.personal.income)
+CDI.data.pireg
+
+```
+
+ + Total Population:
+        $\hat{Y_i} = (2.795e-03) X_i - (1.106e+02)$ or $\hat{Y_i} = 0.002795X_i - 110.6$
+        
+ + Number of Hospital Beds:
+        $\hat{Y_i} = 0.7431X_i - 95.9322$
+    
+ + Total Personal Income:
+        $\hat{Y_i} = 0.1317X_i - 48.3948$    
+
+
+
+\newpage
+b.	Plot the three estimated regression functions and data on separate graphs. Does a linear regression relation appear to provide a good fit for each of the three predictor variables?
+
+
+```{r showCDIdata graphs}
+
+
+with(CDI.data, plot(Total.population, Number.of.active.physicians))
+	abline(CDI.data.tpreg)
+
+
+with(CDI.data, plot(CDI.data$Number.of.hospital.beds, Number.of.active.physicians))
+	abline(CDI.data.hbreg)
+
+	
+with(CDI.data, plot(CDI.data$Total.personal.income, Number.of.active.physicians))
+	abline(CDI.data.pireg)
+
+	
+summary(CDI.data.tpreg)$adj.r.squared
+summary(CDI.data.hbreg)$adj.r.squared
+summary(CDI.data.pireg)$adj.r.squared
+
+```
+ + **Yes**, for all three of the graphs the lines show a good fit with the data. This is even further noted by their high $r^2$ adjusted values of: Total Population: 0.8838027, Number of Hospital Beds: 0.903162, Total Personal Income: 0.8986829.
+    
+    
+\newpage
+c.	Calculate MSE for each of the three predictor variables. Which predictor variable leads to the smallest variability around the fitted regression line?
+
+```{r showCDIdata MSE}
+mse <- function(sm) {mean(sm$residuals^2)}
+
+print("Total Population")
+mse(CDI.data.tpreg)
+print("Hospital Beds")
+mse(CDI.data.hbreg)
+print("Personal Income")
+mse(CDI.data.pireg)
+```
+    + **Number of Hospital Beds** regression has the smallest variability.
+
+
+\newpage
+## Problem 4:
+
+4.)	Repeat question 3, by building the models on the development sample (a random sample of 70% of CDI data), and calculating MSE’s on the hold out sample (remainder 30% of the CDI data). 
+
+```{r showCDIdata development training and testing}
+set.seed(42)
+
+print(nrow(CDI.data) * .7)
+
+rows <- sample(nrow(CDI.data))
+CDI.data.shuffled <- CDI.data[rows, ]
+
+
+#Total Population 
+lm.tp <- lm(Number.of.active.physicians ~ Total.population, data = CDI.data.shuffled[1:308,])
+
+predict.tp = predict(lm.tp, CDI.data.shuffled[309:420,])
+
+print(mean((CDI.data.shuffled[309:420,]$Number.of.active.physicians - predict.tp) ^ 2))
+
+
+#Hospital Beds 
+lm.hb <- lm(Number.of.active.physicians ~ Number.of.hospital.beds, data = CDI.data.shuffled[1:308,])
+
+predict.hb = predict(lm.hb, CDI.data.shuffled[309:420,])
+
+print(mean((CDI.data.shuffled[309:420,]$Number.of.active.physicians - predict.hb) ^ 2))
+
+
+#Total Personal Income 
+lm.pi <- lm(Number.of.active.physicians ~ Total.personal.income, data = CDI.data.shuffled[1:308,])
+
+predict.pi = predict(lm.pi, CDI.data.shuffled[309:420,])
+
+print(mean((CDI.data.shuffled[309:420,]$Number.of.active.physicians - predict.pi) ^ 2))
+
+
+
+```
+
+ + Total Population:
+        MSE = 631336
+        
+ + Number of Hospital Beds:
+        MSE = 287525.2
+    
+ + Total Personal Income:
+        MSE = 562923.4 
+
+
+
+
+\newpage
+## Problem 5:
+
+5.)	The dataset teengamb concerns a study of teenage gambling in Britain. 
+
+a.	Regress the expenditure on gambling (Y) on income (X). State the estimated regression function. Compute the mean and median of the residuals.
+
+```{r gambling vs income}
+print("Gambling vs Income:")
+with(teengamb, plot(income, gamble))
+	abline(lm(teengamb$gamble ~ teengamb$income))
+
+teengamb.gvireg = lm(teengamb$gamble ~ teengamb$income)	
+		
+summary(teengamb.gvireg)
+
+```
+
+```{r estimated regression function}
+print(teengamb.gvireg)
+
+```
+The estimated regression function is $\hat{Y_i}=5.520X_i-6.325$
+
+
+
+
+
+
+Compute the mean and median of the residuals.
+
+```{r reg summary}
+
+mean(teengamb.gvireg$residuals)
+
+median(teengamb.gvireg$residuals)
+
+```
+  
+ + Regression function: $\hat{Y_i} = 5.520 X_i - 6.325$
+    
+ + Mean: -5.203801e-16 
+
+ + Median: -3.757382
+
+
+\newpage
+b.	Which observation has the largest (positive) residual? Give the case number.
+
+```{r reg largest res}
+max(teengamb.gvireg$residuals)
+which.max(teengamb.gvireg$residuals)
+teengamb[c(24),]
+teengamb.gvireg$residuals
+
+```
+ + The largest positive residual is **107.1197**, line item 24, where gamble was 156. 

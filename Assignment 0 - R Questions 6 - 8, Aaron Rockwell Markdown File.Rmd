@@ -1,0 +1,53 @@
+---
+title: "Assignment 0 - R Questions 6 - 8"
+author: "Aaron Rockwell"
+date: "9/15/2019"
+output: pdf_document
+---
+
+
+## Problem 6. For matrix X and Y above, calculate (X + Y)
+
+```{r matrices}
+cat("\n", "X:","\n")
+X = matrix( 
+   c(10, 1, 9, 3, 8, 7, 5, 2, 4), # the data elements 
+   nrow=3,              # number of rows 
+   ncol=3,              # number of columns 
+   byrow = TRUE)        # fill matrix by rows 
+print(X)
+
+cat("\n", "Y:","\n")
+Y = matrix( 
+   c(2, 8, 3, 5, 1, 12, 13, 4, 7), # the data elements 
+   nrow=3,              # number of rows 
+   ncol=3,              # number of columns 
+   byrow = TRUE)        # fill matrix by rows 
+print(Y)
+
+cat("\n", "X + Y:","\n")
+print(X+Y)
+
+```
+
+\newpage
+## Problem 7. For matrix X and Y above, calculate $(X^{T}X)^{-1}X^{T}Y$.
+
+```{r seven}
+print(solve(t(X)%*%X)%*%t(X)%*%Y)
+
+```
+
+
+
+## Problem 8. Write R code to draw 10,000 random samples from uniform distribution and calculate the 99% percentile.
+
+```{r samples}
+set.seed(2)
+observations = runif(10000)
+print(quantile(observations, .99))
+```
+
+
+
+
