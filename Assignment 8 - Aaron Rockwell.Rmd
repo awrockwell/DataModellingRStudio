@@ -1,0 +1,417 @@
+---
+title: "Assignment 8"
+author: "Aaron Rockwell"
+date: "11/18/2019"
+output: pdf_document
+---
+
+```{r libraries}
+library(car)
+library(olsrr)
+```
+
+
+1-	Refer to Brand preference data, build a model with all independent variables (45 pts)
+
+a)	Obtain the studentized deleted residuals and identify any outlying Y observations. Use the Bonferroni outlier test procedure with $\alpha$ = .10. State the decision rule and conclusion. (5pts)
+
+```{r problem 1 a}
+BrandPref.df = data.frame(read.csv("Brand Preference.csv"))
+
+BrandPref.reg = lm(Y~X1+X2, data = BrandPref.df)
+
+anova(BrandPref.reg)
+ResStdev = sd(BrandPref.reg$residuals)
+#ResStdev
+BrandPref.reg$Studentized = BrandPref.reg$residuals / ResStdev
+
+BrandPref.reg$Studentized
+max(abs(BrandPref.reg$Studentized))
+
+#MSE = 7.25
+
+#t(l - (\alpha)/2n; n - p - 1).
+
+#t(1-.1/(2*16);16-3-1)
+
+t = qt((1-.1/(2*16)), (16-3-1))
+t
+
+any(abs(BrandPref.reg$Studentized)>=t)
+
+```
+
+## Problem 1 a:
+Largest studentized value = 1.75486
+If largest studentized value < 3.307783, conclude no significant outliers.
+
+
+
+b)	Obtain the diagonal elements of the hat matrix, and provide an explanation for the pattern in these elements. (5pts)
+
+```{r problem 1 b}
+
+f1<-lm(Y~X1+X2,data=BrandPref.df)
+hii <- hatvalues(f1)
+hii
+#Alternatively
+X<-model.matrix(f1)
+XXInv<-solve(t(X)%*%X)
+Hat.Matrix<-X%*%XXInv%*%t(X)
+#Hat.Matrix
+#help(hatvalues)
+diag(Hat.Matrix)
+
+#influence.measures(f1)
+
+```
+
+## Problem 1 b:
+
+The diagonal of the hat matrix is the hat values.
+
+c)	Are any of the observations outlying with regard to their X values according? (5pts)
+
+```{r problem 1 c}
+plot(Hat.Matrix)
+#Book: 10.28
+#2p/n = 2(3)/20 = .30
+
+#Leverage value
+#2p/n = 2(3)/16
+2*(3)/16
+
+```
+
+## Problem 1 c:
+
+Largest hat value = 0.2375
+If largest hat value < 0.375, conclude no significant outliers.
+
+
+d)	Management wishes to estimate the mean degree of brand liking for moisture content X1 = 10 and sweetness X2 = 3. Construct a scatter plot of X2 against X1 and determine visually whether this prediction involves an extrapolation beyond the range of the data. Also, use (10.29) to determine whether an extrapolation is involved. Do your conclusions from the two methods agree? (5pts)
+
+```{r problem 1 d}
+
+plot(BrandPref.df$X1, BrandPref.df$X2)
+points(10,3,pch="+",col="red")
+
+
+# X'_new (X'X)-1 X_new
+X<-model.matrix(f1)
+XXInv<-solve(t(X)%*%X)
+Hat.Matrix<-X%*%XXInv%*%t(X)
+X_new = c(1,10,3)
+#X_new
+#XXInv
+x_X_X = t(X_new) %*% XXInv
+
+H_extrapolate = x_X_X %*% X_new
+H_extrapolate
+
+```
+
+## Problem 1 d:
+
+$h_{new.new}$ = .175, in range of the other leverage values $h_{ii}$ so no extrapolation is needed. 
+
+
+e)	The largest absolute studentized deleted residual is for case 14. Obtain the DFFlTS, DFBETAS, and Cook's distance values for this case to assess the influence of this case. What do you conclude? (5pts)
+
+```{r problem 1 e}
+inf.mes = influence.measures(f1)
+inf.mes$infmat[14,]
+#plot(f1)
+#plot(BrandPref.df)
+```
+
+## Problem 1 e:
+
+dffit = -1.17353123, min, over 1 = influential
+
+cook.d = 0.3634123447, max 	
+
+dfb.1 = 0.838806807, max, less than 1, not influential	
+
+dfb.X1 = -0.80767958, min, less than 1, not influential	
+
+dfb.X2 = -0.60200882, min, less than 1, not influential	
+
+Case 14 is at the extreme of every measurement, sometimes being multitudes higher or lower. The would lead to believe that is needs to be investigated further and potentially thrown out.
+
+
+f)	Calculate the average absolute percent difference in the fitted values with and without case 14. What does this measure indicate about the influence of case 14? (10pts)
+
+```{r problem 1 f}
+
+BrandPref.reg = lm(Y~., data=BrandPref.df)
+BrandPref.reg = BrandPref.reg$fitted.values[-14]
+
+for (i in c(14)) {
+  new.df = BrandPref.df[-c(i),]
+  new.reg = lm(Y~., data=new.df) 
+  newer_result = mean(abs((new.reg$fitted.values - BrandPref.reg)/BrandPref.reg))
+  newer_new_result = (100* newer_result) / nrow(BrandPref.df)
+}
+
+
+#for (i in c(14)) {
+#  new.df = BrandPref.df[-c(i),]
+#  new.reg = lm(Y~., data=new.df) 
+#  newer_result = mean(abs((new.reg$fitted.values - BrandPref.reg$fitted.values)/BrandPref.reg$fitted.values))
+#  newer_new_result = (100* newer_result) / nrow(BrandPref.df)
+#}
+#BrandPref.df
+#new.df
+#newer_result
+newer_new_result
+```
+
+## Problem 1 f:
+
+The average absolute percent difference in the fitted values with and without case 14 is 3.943375%.
+
+
+g)	Calculate Cook's distance D; for each case and prepare an index plot. Are any cases influential according to this measure? (5pts)
+
+```{r problem 1 g}
+BrandPref.reg = lm(Y~., data = BrandPref.df)
+
+influenceIndexPlot(BrandPref.reg, vars=c("Cook"))
+#ols_plot_cooksd_chart(BrandPref.reg)
+```
+
+## Problem 1 g:
+
+The plot calls out case 14 and 15 as influential. 
+
+
+h)	Find the two variance inflation factors. Why are they both equal to 1? (5pts)
+
+```{r problem 1 h}
+vif(BrandPref.reg)
+
+```
+
+## Problem 1 h:
+
+They are both equal because there are only two variables in the model.
+
+\newpage
+## Problem 2:
+2-	Refer to the Lung pressure Data and Homework 7. The subset regression model containing first-order terms for X1 and X2 and the cross-product term X1X2 is to be evaluated in detail. (35 pts)
+
+a)	Obtain the residuals and plot them separately against Y and each of the three predictor variables. On the basis of these plots. should any further modification of the regression model be attempted? (5pts)
+
+```{r problem 2 a}
+LungPres.df = data.frame(read.csv("Lung Pressure.csv"))
+#LungPres.df
+
+Y = LungPres.df$Y
+X1 = LungPres.df$X1
+X2 = LungPres.df$X2
+X1X2 = X1*X2
+
+#X1X2
+
+LungPres.regX1 = lm(Y~X1)
+plot(Y, LungPres.regX1$residuals)
+
+LungPres.regX2 = lm(Y~X2)
+plot(Y, LungPres.regX2$residuals)
+
+LungPres.regX1X2 = lm(Y~X1X2)
+plot(Y, LungPres.regX1X2$residuals)
+
+```
+
+## Problem 2 a:
+
+There's potentially an outlier from X1, but would need further investigation to determine modification.
+
+
+b)	Prepare a normal probability plot of the residuals. Also obtain the coefficient of correlation between the ordered residuals and their expected values under normality. Does the normality assumption appear to be reasonable here? (5pts)
+
+```{r problem 2 b}
+LungPres.reg = lm(Y~X1+X2+X1X2)
+LungPres.std = rstandard(LungPres.reg)
+qqnorm(LungPres.std)
+qqline(LungPres.std)
+QQnorm = qqnorm(LungPres.std)
+QQnorm.reg =lm(QQnorm$y~QQnorm$x)
+#anova(QQnorm.reg)
+summary(QQnorm.reg)
+
+.9377^.5
+
+```
+
+## Problem 2 b:
+
+The normality assumption is reasonable, but with two outliers that should be investigated further. 
+R = 0.9683491
+
+c)	Obtain the variance inflation factors. Are there any indications that serious multicollinearity problems are present? Explain. (5pts)
+
+```{r problem 2 c}
+
+
+vif(LungPres.reg)
+
+#LungPresMod.df = LungPres.df
+#LungPresMod.df$X1X2 = X1X2
+#round(cor(LungPresMod.df),3)
+
+LungPres.reg.init = lm(Y~X1+X2+X3, data = LungPres.df)
+vif(LungPres.reg.init )
+
+```
+
+## Problem 2 c:
+
+Using a cutoff of 5, all variable show multicollinearity. Because the model includes the cross-product term X1X2 multicolinearity should be expected.
+
+
+d)	Obtain the studentized deleted residuals and identify outlying Y observations. Use the Bonferroni outlier test procedure with $\alpha$= .05. State the decision rule and conclusion. (5pts)
+
+```{r problem 2 d}
+anova(LungPres.reg)
+ResStdev = sd(LungPres.reg$residuals)
+#ResStdev
+LungPres.reg$Studentized = LungPres.reg$residuals / ResStdev
+
+LungPres.reg$Studentized
+max(abs(LungPres.reg$Studentized))
+
+#MSE = 7.25
+
+#t(l - (\alpha)/2n; n - p - 1).
+
+nrow(LungPres.df)
+t = qt((1-.05/(2*19)), (15-1))
+t
+
+any(abs(LungPres.reg$Studentized)>=t)
+
+```
+
+## Problem 2 d:
+
+Largest studentized value = 2.488014
+
+If largest studentized value < 3.64871, conclude no significant outliers.
+
+
+e)	Obtain the diagonal elements of the hat matrix. Are there any outlying X observations? Discuss. (5pts)
+
+```{r problem 2 e}
+
+LungPres.reg = lm(Y~X1+X2+X1X2)
+
+f1<-LungPres.reg
+#hii <- hatvalues(f1)
+#hii
+#Alternatively
+X<-model.matrix(f1)
+XXInv<-solve(t(X)%*%X)
+Hat.Matrix<-X%*%XXInv%*%t(X)
+#Hat.Matrix
+#help(hatvalues)
+diag(Hat.Matrix)
+
+#influence.measures(f1)
+
+#plot(Hat.Matrix)
+
+max(Hat.Matrix)
+
+#Leverage value
+#2p/n = 2(3)/19
+2*(3)/19
+
+
+```
+
+## Problem 2 e:
+
+Largest hat value = 0.8782787
+
+If largest hat value > 0.3157895, conclude that there are significant outliers.
+
+f)	Cases 3, 8, and 15 are moderately far outlying with respect to their X values, and case 7 is relatively far outlying with respect to its Y value. Obtain DFFITS, DFBETAS, and Cook's distance values for these cases to assess their influence. What do you conclude? (10pts)
+
+```{r problem 2 f}
+inf.mes = influence.measures(f1)
+#inf.mes
+inf.mes$infmat[c(3,8,14,7),]
+#plot(f1)
+
+```
+
+## Problem 2 f:
+
+For dffit, case 8 and 7 are over 1 = influential
+
+For cook.d, case 8 is significantly out of the range of other variables to show that it's influential 	
+
+For dfb.1 = case 8 and 7 are over 1 = influential	
+
+For dfb.X1 = case 8 and 7 are over 1 = influential
+
+For dfb.X2 = case 8 is over 1 = influential	
+
+Conclude that case 8 is an outlier by all measures and case 7 is influential on 60% of the measures.
+
+
+\newpage
+## Problem 3:
+3-	Refer to the Prostate Cancer data set in Appendix C.6 and Homework 7. For the best subset model developed in Homework 7, perform appropriate diagnostic checks to evaluate outliers and assess their influence. Do any serious multicollinearity problems exist here? (20pts)
+
+```{r problem 3}
+ProsCanc.df = data.frame(read.csv("Prostate Cancer.csv"))
+# LungPres.df
+# Cancer.volume, Capsular.penetration
+#Y = PSA
+ProsCanc.reg = lm(PSA.level~Cancer.volume + Capsular.penetration,data=ProsCanc.df)
+#ProsCanc.reg
+#influenceIndexPlot(ProsCanc.reg, vars=c("Cook"))
+
+inf.mes = influence.measures(ProsCanc.reg)
+#inf.mes 
+inf.mes$infmat[c(47,55,79,86,89,91,94,95,96,97),]
+
+model = ProsCanc.reg
+ols_plot_cooksd_chart(model)
+ols_plot_dfbetas(model)
+ols_plot_dffits(model)
+ols_plot_resid_stud(model)
+ols_plot_resid_stand(model)
+ols_plot_resid_lev(model)
+ols_plot_resid_stud_fit(model)
+#vif(ProsCanc.reg)
+#ProsCanc.df.cor = ProsCanc.df.cor[,c(ProsCanc.df$PSA.level, ProsCanc.df$Cancer.volume, ProsCanc.df$Capsular.penetration)]
+ProsCanc.df.cor = data.frame(PSA.level=ProsCanc.df$PSA.level, Cancer.volume=ProsCanc.df$Cancer.volume, Capsular.penetration=ProsCanc.df$Capsular.penetration)
+cor(ProsCanc.df.cor)
+```
+
+## Problem 3:
+
+Top three cases to consider dropping would be 97, 95, and 47
+
+For dffit, case 96 and 97 are over 1 = influential
+
+For cook.d, case 97 is significantly out of the range of other variables to show that it's influential 	
+
+For dfb.1 = no cases over 1 
+
+For dfb.X1 = no cases over 1
+
+For dfb.X2 = no cases over 1
+
+Based on the findings, would consider dropping 97 from the model. Would consider 96, 47, and 95 as well.
+
+For multicollinearity, Cancer.volume and Capsular.penetration are 0.6928967, so multicollinearity does exist.
+
+
+
+

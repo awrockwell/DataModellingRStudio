@@ -1,0 +1,266 @@
+---
+title: "Assignment 10"
+author: "Aaron Rockwell"
+date: "12/11/2019"
+output: pdf_document
+---
+
+1-	Refer to the Prostate Cancer data set in Appendix C.5 and Homework 9. Select a random sample of 65 observations to use as the model-building data set (use set.seed(1023)). Use the remaining observations for the test data. (10 pts)
+
+a)	Develop a neural network model for predicting PSA. Justify your choice of number of hidden nodes and interpret your model. Test the model performance on the test data. 
+
+```{r problem 1 a}
+library(neuralnet)
+
+set.seed(1023)
+ProCan.df = data.frame(read.csv("Prostate Cancer.csv"))
+
+#Y=log(ProCan.df$PSA.level)
+Y=(ProCan.df$PSA.level)
+X1=ProCan.df$Cancer.volume
+X2=ProCan.df$Weight
+X3=ProCan.df$Age
+X4=ProCan.df$Benign.prostatic.hyperplasia
+X5=ProCan.df$Seminal.vesicle.invasion
+X6=ProCan.df$Capsular.penetration 
+X7=ProCan.df$Gleason.score
+
+nn.data<-data.frame(cbind(Y,X1,X2,X3,X4,X5,X6,X7))
+pop<-nn.data[nn.data[,1]!=-Inf,]
+
+max = apply(pop , 2 , max)
+min = apply(pop, 2 , min)
+scaled = as.data.frame(scale(pop, center = min, scale = max-min))
+
+
+ind = sample(1:nrow(scaled), size = 65)
+train.data= scaled[ind,]
+test.data = scaled[-ind,]
+#train.data= scaled[1:65, ]
+#test.data = scaled[-c(1:65), ]
+
+x <- c(1,2,3,4,5,6,7,5)
+
+for (val in x) {
+NN = neuralnet(Y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7, train.data, hidden = c(val) , linear.output= T )
+#plot(NN)
+
+pred.Y<-NN$net.result[[1]]*(max(pop$Y)-min(pop$Y))+min(pop$Y)
+act.Y<- (train.data$Y)*(max(pop$Y)-min(pop$Y))+min(pop$Y)
+MSE.train<-sum((pred.Y- act.Y)^2)/nrow(train.data)
+#MSE.train
+#checking the performance on the test data
+NN_test<- compute(NN,test.data[,2:8])
+pr.y_o <- (NN_test$net.result)*(max(pop$Y)-min(pop$Y))+min(pop$Y)
+act.test.y <- (test.data$Y)*(max(pop$Y)-min(pop$Y))+min(pop$Y)
+MSE.test <- sum((act.test.y - pr.y_o)^2)/nrow(test.data)
+#MSE.test
+print(paste("Hidden Layers:", val,"MSE Train:",MSE.train,"MSE Test:",MSE.test))
+#print(data.frame(cbind(MSE.train,MSE.test)))
+
+  }
+
+NN = neuralnet(Y ~ X1 + X2 + X3 + X4 + X5 + X6 + X7, train.data, hidden = c(5) , linear.output= T )
+plot(NN)
+```
+
+## Problem 1 a:
+
+I choose five hidden layers because it was the spot before the MSEs started to gain for the training data to be overfitting. 
+
+b)	Compare the performance of your neuron network model with regression tree model obtained in HW9. Which model is more easily interpreted and why? (5pts)
+
+
+## Problem 1 b:
+
+TREE Model Train MSE: 712.017
+
+NN Model Train MSE: 71.33
+
+TREE Model Pred MSE: 488.4102
+
+NN Model Pred MSE: 1629.55
+
+The NN did a better job at training but had a higher test case. Also, the tree is easier to interpret because it is clearly marked and easy to read, even for omeone without a data science background.
+
+
+c)	Compare the performance of your neural network model with that of the best regression model obtained in homework 8. Which model is more easily interpreted and why?
+
+```{r problem 1 c}
+ProsCanc.reg = lm(PSA.level~Cancer.volume + Capsular.penetration,data=ProCan.df)
+anova(ProsCanc.reg)
+
+```
+
+## Problem 1 c:
+
+Full Model MSE: 991
+
+NN Model Train MSE: 71.33
+
+NN Model Pred MSE: 1629.55
+
+NN train model does a better fit than the full model, would need to convert to r^2s to have a better comparison. As far as interpretation goes, both models are equal, with non-data scientist types needing about an equal amount of explaination, linear regression is more widely understood.
+
+
+2-	Refer to the Disease outbreak data set in Appendix C.10. Savings account status is the response variable and age, socioeconomic status, and city sector are the predictor variables.
+
+a)	Fit logistic regression model to predict the saving account status on the predictor variables in first-order terms and interaction terms for. all pairs of predictor variables. State the fitted response function. 
+
+```{r problem 2 a}
+
+DiOut.df = data.frame(read.csv("Disease Outbreak.csv"))
+DiOut.logreg = glm(Savings.account.status~Disease.status+Sector+Socioeconomic.status+Age, family = binomial, DiOut.df)
+
+summary(DiOut.logreg)
+
+coef(DiOut.logreg)
+```
+
+## Problem 2 a:
+
+Function:
+
+Y_probablity=1/(1+exp(-0.02130518Disease.status + 0.77506163Sector -0.97676798Socioeconomic.status+0.03595640Age+0.19626175))
+
+b)	Use the likelihood ratio test to determine whether all interaction terms can be dropped from the regression model; use $\alpha$ = .01. State the alternatives, full and reduced models, decision rule, and conclusion. What is the approximate P-value of the test?
+
+```{r problem 2 b}
+
+DiOut.logregAll = glm(Savings.account.status~Disease.status+Sector+Socioeconomic.status+Age, family = binomial, DiOut.df)
+
+DiOut.logregNoAge = glm(Savings.account.status~Disease.status+Sector+Socioeconomic.status, family = binomial, DiOut.df)
+
+DiOut.logregNoStatus = glm(Savings.account.status~Disease.status+Sector+Age, family = binomial, DiOut.df)
+
+DiOut.logregAllNoSector = glm(Savings.account.status~Disease.status+Socioeconomic.status+Age, family = binomial, DiOut.df)
+
+DiOut.logregAllNoDisease.status = glm(Savings.account.status~Sector+Socioeconomic.status+Age, family = binomial, DiOut.df)
+
+print("-----No Age------")
+anova(DiOut.logregAll,DiOut.logregNoAge, test="Chi")
+
+print("-----No Status------")
+anova(DiOut.logregAll,DiOut.logregNoStatus, test="Chi")
+print("-----No Sector------")
+anova(DiOut.logregAll,DiOut.logregAllNoSector, test="Chi")
+print("-----No Disease Status------")
+anova(DiOut.logregAll,DiOut.logregAllNoDisease.status, test="Chi")
+
+
+#anova(lm(Savings.account.status~Disease.status+Sector+Socioeconomic.status+Age, DiOut.df))
+
+backwards = step(DiOut.logregAll) 
+step(DiOut.logregAll, trace=0)
+formula(backwards)
+
+```
+
+## Problem 2 b:
+
+Disease.status can be dropped from the model. Pvalue = 0.9567.
+
+
+c)	Conduct the Hosmer-Lemeshow goodness of fit test for the appropriateness of the logistic regression function by forming five groups of approximately 20 cases each; use $\alpha$ = .05.
+
+```{r problem 2 c}
+#Hosmer and Lemeshow goodness of fit (GOF) test
+#install.packages("ResourceSelection")
+library(ResourceSelection)
+#hoslem.test(DiOut.logregAll$y,fitted(DiOut.logregAll),g=5)
+
+#help(hoslem.test)
+set.seed(1024)
+cases = c(20,20,20,20,20,20,20,20,19,19)
+
+for (case in cases) {
+  ind = sample(1:nrow(DiOut.df), size = case)
+  case.data= DiOut.df[ind,]
+  case.data.logreg = glm(Savings.account.status~Disease.status+Sector+Socioeconomic.status+Age, family = binomial, case.data)
+  hoslem.test(case.data.logreg$y,fitted(case.data.logreg),g=5)
+  print(hoslem.test(case.data.logreg$y,fitted(case.data.logreg),g=5))
+}
+  
+qt((1-.05/2), 198-2)
+
+```
+
+## Problem 2 c:
+
+Six of the ten cases passed the goodness of fit test.
+
+
+3-	Refer to the Geriatric study. A researcher in geriatrics designed a prospective study to investigate the effects of two interventions on the frequency of falls. One hundred subjects were randomly assigned to one of the two interventions: education only (X1 = 0) and education plus aerobic exercise training (X1 = 1). Subjects were at least 65 years of age and in reasonably good health. Three variables considered to be important as control variables were gender (X2:0=female;1=male), a balance index (X3). and a strength index (X4). The higher balance index, the more stable is the subject and the higher the strength index, the stronger is the subject. Each subject kept a diary recording the number of falls (Y) during the six months of the study.
+
+
+a)	Fit the regression model. State the estimated regression coefficients, their estimated standard deviations. and the estimated response function.
+
+```{r problem 3 a}
+GerStud.df = data.frame(read.csv("Geriatric Study.csv"))
+#GerStud.reg = lm(Y~.,data=GerStud.df)
+#GerStud.df
+#GerStud.reg = glm(Y~X1+X2+X3+X4, family = poisson, GerStud.df)
+pmod <- glm(Y~X1+X2+X3+X4, family = poisson, GerStud.df)
+summary(pmod)
+pmod
+
+```
+
+## Problem 3 a:
+Coefficients:
+
+(Intercept): 0.489467          
+
+X1: -1.069403       
+
+X2: -0.046606      
+
+X3: 0.009470           
+
+X4: 0.008566 
+
+Std. Dev:
+
+(Intercept):	0.336869
+
+X1:	0.133154
+
+X2:	0.11997
+
+X3:	0.002953
+
+X4:	0.004312
+
+
+b)	Assuming that the fitted model is appropriate, use the likelihood ratio test to determine whether gender (X2) can be dropped from the model: State the full and reduced models. decision rule. and conclusion. What is the P-value of the test
+
+```{r problem 3 b}
+
+beta <- coef(pmod)
+beta
+anova(pmod,test="Chisq") # Overall likelihood ratio test
+c(deviance(pmod), df.residual(pmod))
+
+
+```
+
+## Problem 3 b:
+
+X2 has a Pvalue of .42915 and can be removed from the model.
+
+c)	Predicted the number of falls for X1=1, X2=0, X3=45, X4=70.
+
+```{r problem 3 c}
+
+test = data.frame(cbind(X1=1, X2=0, X3=45, X4=70))
+per=predict(pmod,test,type="response",se.fit=TRUE)
+per
+
+```
+
+## Problem 3 c:
+
+Predicted number of falls: 1.561773 
+
+
+

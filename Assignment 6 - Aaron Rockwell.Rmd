@@ -1,0 +1,477 @@
+---
+title: "Assignment 6"
+author: "Aaron Rockwell"
+date: "11/11/2019"
+output: pdf_document
+---
+
+
+## Problem 1:
+
+1-	An analyst wanted to fit the regression model $Y_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \beta_3 X_{i3} + \epsilon_i$,
+i = 1, ... , n, by the method of least squares when it is known that $\beta_2$ = 4. How can the analyst obtain the desired fit by using a multiple regression computer program? (20pts)
+
+In R, the way to solve would be to subtract the $4X_{i2}$ from both sides, then run the model:
+$$Y_i - 4X_{i2}  = \beta_0 + \beta_1 X_{i1} + \beta_3 X_{i3} + \epsilon_i$$
+
+Code would look like:
+
+```{r problem 1}
+# Dataframe.df.NewY = Dataframe.df$Y - 4 * Dataframe.df$X2 
+# Dataframe.reg = (Dataframe.df.NewY ~ Dataframe.df$X1 + Dataframe.df$X3 + Dataframe.df$X4)
+
+```
+
+\newpage
+## Problem 2:
+
+2-	Refer to the Commercial Properties data and problem in Assignment 5. (25 pts)
+
+a)	Obtain the analysis of variance table that decomposes the regression sum of squares into extra sums of squares associated with X4; with X1 given X4; with X2 , given X1 and X4; and with X3, given X1, X2 and X4. (10pts)
+
+```{r problem 2 a}
+
+CommProps.df = data.frame(read.csv("Commercial Properties.csv"))
+
+#SSR(X4)
+anova(lm(Y~X4, data=CommProps.df))["X4","Sum Sq"]
+
+
+#SSR(X1|X4)
+anova(lm(Y~X4, data=CommProps.df))["Residuals","Sum Sq"] - 
+  anova(lm(Y~X4+X1, data=CommProps.df))["Residuals","Sum Sq"] 
+
+# SSR(X2|X1,X4)
+# SSR(X2|X1,X4) = SSE(X1, X4) - SSE(X1, X2, X4)
+SSE.X1X4 = anova(lm(Y~X1+X4, data=CommProps.df))["X1","Sum Sq"] + 
+  anova(lm(Y~X1+X4, data=CommProps.df))["X4","Sum Sq"] 
+SSE.X1X2X4 =  anova(lm(Y~X1+X4+X2, data=CommProps.df))["X1","Sum Sq"] + 
+  anova(lm(Y~X1+X4+X2, data=CommProps.df))["X4","Sum Sq"] + 
+  anova(lm(Y~X1+X4+X2, data=CommProps.df))["X2","Sum Sq"] 
+abs(SSE.X1X4 - SSE.X1X2X4)
+
+#SSR(X3|X1,X2,X4)
+SSE.X1X2X4 =  anova(lm(Y~X1+X4+X2, data=CommProps.df))["X1","Sum Sq"] + 
+  anova(lm(Y~X1+X4+X2, data=CommProps.df))["X4","Sum Sq"] + 
+  anova(lm(Y~X1+X4+X2, data=CommProps.df))["X2","Sum Sq"] 
+SSE.X1X2X4X3 =  anova(lm(Y~X1+X4+X2+X3, data=CommProps.df))["X1","Sum Sq"] + 
+  anova(lm(Y~X1+X4+X2+X3, data=CommProps.df))["X4","Sum Sq"] + 
+  anova(lm(Y~X1+X4+X2+X3, data=CommProps.df))["X2","Sum Sq"] + 
+  anova(lm(Y~X1+X4+X2+X3, data=CommProps.df))["X3","Sum Sq"] 
+abs(SSE.X1X2X4X3 - SSE.X1X2X4)
+
+
+
+```
+
+## Problem 2 a:
+
+SSR(X4) = 67.7751
+
+SSR(X1|X4) =  42.27457
+
+SSR(X2|X1,X4) = 27.85749
+
+SSR(X3|X1,X2,X4) = 0.4197463
+
+\newpage
+b)	Test whether X3 can be dropped from the regression model given that X1, X2 and X4 are retained. Use the F test statistic and level of significance .01. State the alternatives, decision rule, and conclusion. What is the P-value of the test? (5pts)
+
+```{r problem 2 b}
+# SSR(X3|X1,X2,X4) = 0.4197463
+# anova(lm(Y~X1+X4+X2+X3, data=CommProps.df))
+# SSE(X1,X2,X3,X4) = 98.2306
+# anova(lm(Y~X1+X4+X2, data=CommProps.df))
+# F* = MSR / MSE
+
+MSE = 98.2306 / 76
+
+# SSR(X3|X1,X2,X4) = 0.4197463
+MSR =  0.4197463 / 1
+
+Ftest = MSR / MSE
+
+Ftest
+
+qt(.99, 76-2)
+
+
+```
+
+## Problem 2 b:
+
+
+If $t^* \leq 2.377102$, conclude there is no significance to add X3
+
+If $t^*> 2.377102$, conclude there is significance to add X3
+
+$t^* =  0.3247534$ so we conclude there is no significance of adding X3 and it can be dropped from the model.
+
+
+
+c)	Test whether both X2 and X3 can be dropped from the regression model given that X1 and X4 are retained; use $\alpha$ =.01. State the alternatives, decision rule, and conclusion. What is the P-value of the test? (5pts)
+
+
+```{r problem 2 c}
+# anova(lm(Y~X1+X4+X2+X3, data=CommProps.df))
+# SSE(X1,X2,X3,X4) = 98.2306
+
+# SSR(X2,X3|X1,X4) =
+# SSR(X3|X1,X2,X4)
+SSR = abs(SSE.X1X2X4X3 - SSE.X1X4)
+
+# F* = MSR / MSE
+MSE = 98.2306 / 76
+
+# SSR(X3|X1,X2,X4) = 0.4197463
+MSR =  SSR / 2
+
+Ftest = MSR / MSE
+
+Ftest
+
+qf(.99, df1=1, df2=76) 
+2*pt(-abs(Ftest),df=76-2)
+
+```
+
+## Problem 2 c:
+
+If $t^* \leq 6.980578$, conclude there is no significance to add X3, X2
+
+If $t^*> 6.980578$, conclude there is significance to add X3, X2
+
+$t^* = 10.9389$ so we conclude there is significance of adding X2, X3 and they should be retained in the model.
+
+The p-value = 4.05568e-17, and is significant if based on being under .05.
+
+
+
+d)	Test whether, $\beta_1$ = -.1 and, $\beta_2$ =.4; Use $\alpha$ =.01. State the alternatives, full and reduced models, decision rule, and conclusion. (5pts)
+
+```{r problem 2 d}
+# anova(lm(Y~X1+X4+X2+X3, data=CommProps.df))
+# SSE(X1,X2,X3,X4) = 98.2306
+
+# SSE.X3X4 = anova(lm(Y~X3+X4, data=CommProps.df))["X3","Sum Sq"] + anova(lm(Y~X3+X4, data=CommProps.df))["X4","Sum Sq"] 
+
+CommPropsX1X2.trans = CommProps.df
+CommPropsX1X2.trans$Y = CommPropsX1X2.trans$Y - CommPropsX1X2.trans$X1 * 
+  -.1 - CommPropsX1X2.trans$X2 * .4
+anova(lm(Y~X3+X4, data=CommPropsX1X2.trans))
+# SSE(X1,X2,X3,X4) = 110.141
+
+# SSR(X2,X3|X1,X4) =
+# SSR(X3|X1,X2,X4)
+
+SSR = abs(110.141 - 98.2306)
+SSE= 98.2306
+
+# F* = MSR / MSE
+MSE = SSE / 76
+MSR = SSR / 2
+
+Ftest = MSR / MSE
+
+Ftest
+
+qf(.99, df1=2, df2=76) 
+
+lm(Y~X3+X4, data=CommPropsX1X2.trans)
+
+```
+
+## Problem 2 d:
+
+If $t^* \leq 4.89584$, conclude there is no significance to add X3, X2
+
+If $t^*> 4.89584$, conclude there is significance to add X3, X2
+
+$t^* = 4.859143$ so we conclude there is no significance of using $\beta_1$ = -.1 and, $\beta_2$ =.4.
+
+Tested Model = Y + .1X1 - .4X2 = (2.142e+00)X3 + (5.804e-06)X4 + (1.094e+01) = - .1X1 + .4X2 + (2.142e+00)X3 + (5.804e-06)X4 + (1.094e+01) 
+
+\newpage
+## Problem 3:
+
+3-	Refer to Brand preference data and problem in Assignment 5 (30 pts)
+
+a)	Transform the variables by means of the correlation transformation and fit the standardized regression model (10pts).
+
+
+```{r problem 3 a}
+
+BrandPref.df = data.frame(read.csv("Brand Preference.csv"))
+n = 16
+
+
+#Correlation Transformation
+# Y* = (1/sqrt(n-1)) * ((Y_i - Yhat)/s_Y)
+# X* = (1/sqrt(n-1)) * ((X_i - Xhat)/s_X)
+
+BrandPref.df.Trans = BrandPref.df
+
+BrandPref.df.Trans$Y = (1/sqrt(n-1)) * 
+  ((BrandPref.df.Trans$Y - mean(BrandPref.df.Trans$Y)) / sd(BrandPref.df.Trans$Y))
+BrandPref.df.Trans$X1 = (1/sqrt(n-1)) *
+  ((BrandPref.df.Trans$X1 - mean(BrandPref.df.Trans$X1)) / sd(BrandPref.df.Trans$X1))
+BrandPref.df.Trans$X2 = (1/sqrt(n-1)) *
+  ((BrandPref.df.Trans$X2 - mean(BrandPref.df.Trans$X2)) / sd(BrandPref.df.Trans$X2))
+
+head(BrandPref.df.Trans)
+
+lm(Y~X1+X2, data=BrandPref.df.Trans)
+anova(lm(Y~X1+X2, data=BrandPref.df.Trans))
+
+```
+
+## Problem 3 a:
+
+Intercept -4.163e-17 should be dropped from model and counted as 0.
+
+$Y^* = (8.924e-01)X_1^* + (3.946e-01)X_2^*$
+
+
+b)	Interpret the standardized regression coefficient (5pts).
+
+## Problem 3 b:
+
+$B_0$ intercept (-4.163e-17) should be dropped from model and counted as 0.
+
+$B_1 < B_2$ showing that after correlation transformation, X2 has a greater coefficient. X1 has a lower p-value, so X1 might contribute more to the predictive model.
+
+
+
+c)	Transform the estimated standardized regression coefficients back to the ones for the fitted regression model in the original variables (5pts).
+
+
+## Problem 3 c:
+
+```{r problem 3 c}
+n = 16
+
+#Correlation Transformation
+# Y* = (1/sqrt(n-1)) * ((Y_i - Yhat)/s_Y)
+# X* = (1/sqrt(n-1)) * ((X_i - Xhat)/s_X)
+
+BrandPref.df.postTrans = BrandPref.df.Trans
+
+BrandPref.df.postTrans$Y = BrandPref.df.Trans$Y / (1/sqrt(n-1)) * 
+  sd(BrandPref.df$Y) + mean(BrandPref.df$Y)
+BrandPref.df.postTrans$X1 = BrandPref.df.Trans$X1 / (1/sqrt(n-1)) * 
+  sd(BrandPref.df$X1) + mean(BrandPref.df$X1)
+BrandPref.df.postTrans$X2 = BrandPref.df.Trans$X2 / (1/sqrt(n-1)) * 
+  sd(BrandPref.df$X2) + mean(BrandPref.df$X2)
+
+head(BrandPref.df)
+head(BrandPref.df.postTrans)
+
+```
+
+
+
+d)	Calculate $R^2_{Y1}$, $R^2_{Y2}$, $R^2_{Y12}$, $R^2_{Y1|2}$, $R^2_{Y2|1}$ and $R^2$. Explain what each coefficient measures and interpret your results. (10pts)
+
+```{r problem 3 d}
+# BrandPref.df.reg = lm(Y~X1+X2, BrandPref.df)
+
+#$R^2_{Y1}$:
+print("Y1:")
+summary(lm(Y~X1, BrandPref.df))$r.squared 
+
+#$R^2_{Y2}$:
+print("Y2:")
+summary(lm(Y~X2, BrandPref.df))$r.squared 
+
+#$R^2_{Y12}$:
+print("Y12:")
+#Square of correl between X1,X2
+cor(BrandPref.df$X1,BrandPref.df$X2)^2
+
+
+#$R^2_{Y1|2}$:
+print("Y1|2:")
+anova(lm(Y~X1+X2, BrandPref.df))
+#SSR(X1|X2)/SSE(X2)
+(1566.45) / (94.30 + 1566.45)
+
+
+#$R^2_{Y2|1}$:
+print("Y2|1:")
+anova(lm(Y~X1+X2, BrandPref.df))
+# SSR(X2|X1) / SSE(X1)
+306.25 / (94.30 + 306.25)
+
+
+#$R^2$:
+print("R2:")
+summary(lm(Y~X1+X2, BrandPref.df))$r.squared 
+
+
+
+
+```
+
+## Problem 3 d:
+
+$R^2_{Y1}$:
+0.796365
+Measures X1s ability to predict Y.
+
+$R^2_{Y2}$:
+0.155694
+Measures X2s ability to predict Y.
+
+$R^2_{Y12}$:
+0
+Measures correlation between X1 and X2. Great for not having co-linearity.
+
+$R^2_{Y1|2}$:
+0.9432184
+
+$R^2_{Y2|1}$:
+0.7645737
+
+Measures X1 and X2s ability to predict Y.
+$R^2$:
+0.952059
+
+
+
+\newpage
+## Problem 4:
+
+4-	Refer to the CDI data set. For predicting the number of active physicians (Y) in a county, it has been decided to include total population (X1) and total personal income (X2) as predictor variables. The question now is whether an additional predictor variable would be helpful in the model and, if so, which variable would be most helpful. Assume that a first-order multiple regression model is appropriate. (25 pts)
+
+```{r problem 4}
+
+CDI.df = data.frame(read.csv("CDI.csv"))
+
+```
+
+
+a)	For each of the following variables, calculate the coefficient of partial determination given that X1 and X2 are included in the model: land area (X3), percent of population 65 or older (X4), number of hospital beds (X5), and total serious crimes (X6). (15pts)
+
+```{r problem 4 a}
+
+CDI.df = data.frame(read.csv("CDI.csv"))
+
+Y = CDI.df$Number.of.active.physicians
+X1 = CDI.df$Total.personal.income
+X2 = CDI.df$Total.population
+X3 = CDI.df$Land.area
+X4 = CDI.df$Percent.of.population.65.or.older
+X5 = CDI.df$Number.of.hospital.beds
+X6 = CDI.df$Total.serious.crimes
+
+
+#$R^2_{Y3|12}$:
+print("Y3|12:")
+# SSR(X3|X1,X2) / SSE(X1,X2)
+
+SSR = anova(lm(Y~X1+X2+X3))["X3","Sum Sq"]
+SSE = anova(lm(Y~X1+X2+X3))["Residuals","Sum Sq"]
+SSR / (SSR + SSE)
+
+
+#$R^2_{Y4|12}$:
+print("Y4|12:")
+# SSR(X4|X1,X2) / SSE(X1,X2)
+
+SSR = anova(lm(Y~X1+X2+X4))["X4","Sum Sq"]
+SSE = anova(lm(Y~X1+X2+X4))["Residuals","Sum Sq"]
+SSR / (SSR + SSE)
+
+
+#$R^2_{Y5|12}$:
+print("Y5|12:")
+# SSR(X5|X1,X2) / SSE(X1,X2)
+
+SSR = anova(lm(Y~X1+X2+X5))["X5","Sum Sq"]
+SSE = anova(lm(Y~X1+X2+X5))["Residuals","Sum Sq"]
+SSR / (SSR + SSE)
+
+
+#$R^2_{Y6|12}$:
+print("Y6|12:")
+# SSR(X6|X1,X2) / SSE(X1,X2)
+
+SSR = anova(lm(Y~X1+X2+X6))["X6","Sum Sq"]
+SSE = anova(lm(Y~X1+X2+X6))["Residuals","Sum Sq"]
+SSR / (SSR + SSE)
+
+
+```
+
+## Problem 4 a:
+
+$R^2_{Y3|12}$:
+0.02882495
+
+$R^2_{Y4|12}$:
+0.003842367
+
+$R^2_{Y5|12}$:
+0.5538182
+
+$R^2_{Y6|12}$:
+0.007323408
+
+
+b)	On the basis of the results in part (a), which of the four additional predictor variables is best? Is the extra sum of squares associated with this variable larger than those for the other three variables? (5pts)
+
+## Problem 4 b:
+
+X5, Number.of.hospital.beds is the best addition predictor with $R^2_{Y5|12}$: 0.5538182
+Yes, by over 4 times.
+
+
+c)	Using the F* test statistic, test whether or not the variable determined to be best in part (b) is helpful in the regression model when X1 and X2 are included in the model; use $\alpha$=.01. State the alternatives, decision rule, and conclusion. Would the F* test statistics for the other three potential predictor variables be as large as the one here?  (5pts)
+
+```{r problem 4 c}
+SSE = anova(lm(Y~X1+X2+X5))["Residuals","Sum Sq"]
+SSR = anova(lm(Y~X1+X2+X5))["X5","Sum Sq"]
+# anova(lm(Y~X1+X2+X5))
+
+# F* = MSR / MSE
+MSE = SSE / 436
+MSR =  SSR / 1
+
+Ftest = MSR / MSE
+
+Ftest
+
+qf(.99, df1=1, df2=436) 
+
+```
+
+## Problem 4 c:
+
+If $t^* \leq 6.693358$, conclude there is no significance to add X5
+
+If $t^*> 6.693358$, conclude there is significance to add X5
+
+$t^* = 541.1801$ so we conclude there is significance of adding X5 (Number.of.hospital.beds) and it should be retained in the model.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

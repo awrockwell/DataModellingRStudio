@@ -1,0 +1,26 @@
+---
+title: "Final Exam"
+author: "Aaron Rockwell"
+date: "12/16/2019"
+output: pdf_document
+---
+
+```{r new libraries}
+#install.packages("randomForest")
+library(MASS)
+library(olsrr)
+library(leaps)
+library(faraway)
+library(rpart)
+library(rpart.plot)
+library(neuralnet)
+library(ResourceSelection)
+library(lmtest)
+library(glmnet)
+library(lars)
+library(C50)
+library(graphics)
+library(gmodels)
+library(randomForest)
+
+```

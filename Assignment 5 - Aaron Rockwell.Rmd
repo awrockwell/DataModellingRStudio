@@ -1,0 +1,543 @@
+---
+title: "Assignment 5 Aaron Rockwell"
+author: "Aaron Rockwell"
+date: "10/30/2019"
+output: pdf_document
+
+---
+
+
+## Problem 1
+
+1-	Refer to Plastic hardness data (20pts)
+
+
+## Problem 1 a:
+
+   a)	Using matrix methods, obtain the following: (1) $(X’X)^{-1}$, (2) b, (3) Yhat, (4) H, (5) SSE, (6) s^2(b), (7) s^2(pred) when Xh= 30. (10 pts) 
+
+$$(X'X) = \begin{bmatrix}{}
+  n & \sum X_i \\ 
+  \sum X_i & \sum X_i^2 \\ 
+  \end{bmatrix}$$
+$$(X'X)^{-1} = \frac{1}{n\sum X_i^2-\sum X_i\sum X_i}\begin{bmatrix}{}
+  \sum X_i^2 & -\sum X_i \\ 
+  -\sum X_i & n \\ 
+  \end{bmatrix}$$
+
+```{r problem 1 a 1}
+
+PlasHard.df = data.frame(read.csv("Plastic Hardness.csv"))
+
+SumSigmaSqrd = sum(PlasHard.df$X^2)
+
+SumSigma = sum(PlasHard.df$X)
+
+n = nrow(PlasHard.df)
+
+DeterminantVal = n * SumSigmaSqrd - SumSigma ^ 2
+
+FracDeterminant = 1 / DeterminantVal
+
+#1,1 =
+
+FracDeterminant * SumSigmaSqrd
+
+#1,2 and #1,3 = 
+
+FracDeterminant * -SumSigma
+
+#1,4 = 
+Quad14 = FracDeterminant * n
+
+```
+
+## Problem 1 a Part 1: $(X’X)^{-1}$
+
+$$\begin{bmatrix}{}
+  0.675 & -0.021875 \\ 
+  -0.021875 & 0.00078125 \\ 
+  \end{bmatrix}$$
+
+```{r problem 1 a 2}
+PlasHard.reg = lm(Y~X, data=PlasHard.df)
+
+XTransp = rbind(c(1),c(PlasHard.df$X))
+XMatrix = cbind(c(1),c(PlasHard.df$X))
+YMatrix = PlasHard.df$Y
+YTransp = rbind(c(1),c(PlasHard.df$Y))
+
+XTY = XTransp%*%YMatrix
+
+XTXinv = solve((XTransp%*%XMatrix))
+
+#b = (X'X)^-1Y'X
+
+bMatrix = XTXinv%*%XTY
+
+```
+
+## Problem 1 a Part 2:  b
+
+$$b = \begin{bmatrix}{}
+  b_0 \\ 
+  b_1 \\ 
+  \end{bmatrix} = \begin{bmatrix}{}
+  168.6 \\ 
+  2.034 \\ 
+  \end{bmatrix}$$
+
+## Problem 1 a Part 3: Yhat
+
+```{r problem 1 a 3}
+#Yhat = Xb
+Yhat = XMatrix%*%bMatrix
+Yhat
+
+```
+
+\newpage
+## Problem 1 a Part 4: H
+
+```{r problem 1 a 4}
+#H = X(X'X)^-1X'
+H = XMatrix%*%(XTXinv)%*%XTransp
+head(H)
+
+```
+
+## Problem 1 a Part 5: SSE
+```{r problem 1 a 5}
+#SSE = Y'Y - b'X'Y
+XTransp = rbind(c(1),c(PlasHard.df$X))
+XMatrix = PlasHard.df$X
+YMatrix = PlasHard.df$Y
+XTY = XTransp%*%YMatrix
+bMatrix = XTXinv%*%XTY
+bMatrixTransp = t(bMatrix)
+YTransp = t(PlasHard.df$Y)
+
+SSE = YTransp%*%YMatrix - bMatrixTransp%*%XTY
+
+SSE
+#anova(PlasHard.reg)
+
+```
+SSE = `r SSE`
+
+## Problem 1 a Part 6: s^2(b)
+```{r problem 1 a 6}
+#s^2(b) = MSE(X'X)^-1 , MSE = SSE / (n-2)
+MSE = SSE / (nrow(PlasHard.df)-2)
+sSqrB = MSE[1]* XTXinv
+sSqrB
+```
+
+## Problem 1 a Part 7: s^2(pred) when Xh= 30
+```{r problem 1 a 7}
+#(7) s^2(pred) when Xh= 30
+#s^2{pred} = MSE(l + X'_h(X'X)^-1 Xh)
+XTransph = cbind(c(1),c(30))
+Xh = rbind(c(1),c(30))
+sSqrPred = MSE[1]* (1+XTransph%*%XTXinv%*%Xh)
+sSqrPred
+```
+$s^2\{pred\}=$ `r sSqrPred`
+
+
+   b)	From part (a6), obtain the following: (1) s^2{bo}; (2) s{bo, bl }; (3) s{bl}. (5pts)
+
+```{r problem 1 b 1}
+#s^2{b_0} =
+sSqrB[1,1]
+sSqrB[1,2]
+sSqrB[2,2]
+```
+
+## Problem 1 b Part 1,2,3:
+
+1) $s^2\{b_0\}=$ 7.059777
+2) $s{b_0, b_1}=$ -0.2287891
+3) $s^2\{b_1\}=$ 0.008171038
+
+   c)	Obtain the matrix of the quadratic form for SSE. (5pts)
+
+```{r problem 1 c 1}
+# SSE = Y'(I- H)Y
+#YTransp%*%(diag(c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1))- H)%*%YMatrix
+YTransp%*%(diag(c(16))- H)%*%YMatrix
+
+```
+
+## Problem 1 c:
+
+SSE = 146.425
+
+
+
+\newpage
+## Problem 2
+
+
+2-	Refer to the Brand preference data. In a small-scale experimental study of the relation between degree of brand liking (Y) and moisture content (X1) and sweetness (X2) of the product. (25 pts)
+
+   a)	Obtain the scatter plot matrix and the correlation matrix. What information do these diagnostic aids provide here? (5pts)
+
+```{r problem 2 a}
+
+BrandP.df = data.frame(read.csv("Brand Preference.csv"))
+plot(BrandP.df)
+round(cor(BrandP.df),3)
+
+```
+
+## Problem 2 a:
+
+The scatter plot matrix shows that both variable might have discrete values and X2 might be binary as 4 or 2. The correlation matrix show X1 and X2 have no correlation, so there is no need to worry about co-linearity.
+
+   b)	Fit regression model to data. State the estimated regression function. Interpreted regression coefficients? (5pts)
+
+```{r problem 2 b}
+
+BrandP.df = data.frame(read.csv("Brand Preference.csv"))
+Brand.reg = lm(Y~X1+X2, data=BrandP.df)
+Brand.reg
+
+```
+
+## Problem 2 b:
+
+The regresion function is:
+$\hat{Y} = 4.425X1 + 4.375X2 + 37.65$
+
+Without the coefficients being normalized, it would be hard to say which has a greater impact on the model.
+
+
+   c)	Obtain the residuals, and prepare box plot of the residuals. What information does this plot provide? (5pts)
+```{r problem 2 c}
+boxplot(Brand.reg$residuals, horizontal=TRUE)
+```
+
+## Problem 2 c:
+
+The residuals are evenly distributed.
+
+
+   d)	Plot the residuals against Yhat, X1, X2, and X1X2 on separate graphs. Also prepare a normal probability plot. Interpret the plots and summarize your findings. (5pts)
+
+```{r problem 2 d}
+layout(matrix(c(1,2,1,2,3,4,3,4), 4,2, byrow=TRUE))
+lm.fit = lm(Y~X1+X2, data=BrandP.df)
+residuals = lm.fit$residuals
+Y_hat = predict(lm.fit)
+
+X1 = BrandP.df$X1
+X2 = BrandP.df$X2
+X1X2 = X1*X2
+
+plot(residuals~Y_hat, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X1, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X2, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X1X2, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+
+```
+
+## Problem 2 d:
+
+The residuals vs yhat have a potential arc pattern which might suggest a transformation is needed. X1 and X2 appear to be discrete but beyond that, they have typical error distributions which would claim linearity.
+
+
+   e)	Conduct the Breusch-Pagan test for constancy of the error variance. State the alternatives, decision rule, and conclusion. (5pts)
+   
+   $$X^2_{BP} = \frac{SSR^*}{2} \div \left(\frac{SSE}{n}\right)^2$$
+
+```{r problem 2 e}
+BrandP.reg = lm(Y~X1+X2, data = BrandP.df)
+
+anova(BrandP.reg)
+
+```
+SSE: 1566.45
+SSR: 306.25
+n = 16
+
+
+$$X^2_{BP} = \frac{1566.45}{2} \div \left(\frac{306.25}{16}\right)^2$$
+```{r problem 2 e part 2}
+SSE = 1566.45
+SSR = 306.25
+n = 16
+
+(SSE/2)/(SSR/16)^2
+qchisq(.95, df=1) 
+```
+
+## Problem 2 e:
+
+$\chi^2 (.95; 1) = 3.841$. Since $X^2_{BP}$ = 2.137836 < 3.841, we conclude $H_0$, that the error variance is constant. 
+
+
+\newpage
+## Problem 3
+
+
+3-	Refer to Problem 2 (Brand preference data) (20 pts)
+
+   a)	Test whether there is a regression relation, using $\alpha$ =0.01. State the alternatives, decision rule, and conclusion. What does your test imply about $\beta$ 1 and $\beta$ 2? (5pts)
+
+
+```{r problem 3 a}
+# 6.39a
+BrandP.df = data.frame(read.csv("Brand Preference.csv"))
+Brand.reg = lm(Y~X1+X2, data=BrandP.df)
+anova(Brand.reg)
+
+#F* = MSR / MSE 
+
+#F* X1 =  1566.45/7.25
+#F* X2 = 306.25/7.25 
+
+1566.45 / 7.25
+306.25 / 7.25 
+
+qt(.99, 16-2)
+
+```
+
+## Problem 3 a:
+
+If F* <= F(l - $\alpha$; p - 1, n - p), conclude $H_0$
+If F* > F(l - $\alpha$; p - 1, n - p), conclude $H_a$
+
+$H_0$: $B_1$ = 0 and $B_2$ = 0
+$H_1$: not both $B_1$ and $B_2$ equal zero
+
+X1 F* = 216.0621 > 2.624494, conclude $H_0$ we reject the null.
+X2 F* = 42.24138 > 2.624494, conclude $H_0$ we reject the null.
+
+   b)	Estimate $\beta_1$ and $\beta_2$ jointly by the Bonferroni procedure, using a 99 percent family confidence coefficient. Interpret your results. (5pts)
+
+
+```{r problem 3 b}
+confint(Brand.reg, adjust.method = "bonferroni", level=.99)
+```
+
+## Problem 3 b:
+
+$B_1$ is between 3.517944 and 5.332056 and $B_2$, is between 2.346762 and 6.403238.
+The family confidence coefficient is at least .99 that the procedure leads to correct pairs of interval estimates. 
+
+
+   c)	Obtain an interval estimate of E{Yh} when Xh1 = 5 and Xh2 = 4. Use a 99 percent confidence coefficient. Interpret your interval estimate. (5pts) 
+
+```{r problem 3 c}
+
+Xh = data.frame(X1 = 5, X2 = 4)
+#print(predict.lm(Brand.reg, Xh, se.fit= TRUE))
+
+predict.lm(Brand.reg, Xh, se.fit= TRUE, interval="confidence", level=0.99)
+```
+
+## Problem 3 c:
+
+For $X_{h1}=5$ and $X_{h2}=4$ at a 99% confidence interval: $\hat{Y}$ = 73.88111 to 80.66889
+This is to say there is 99% confidence that the mean of the prediction falls inbetween 73.88111 to 80.66889.
+
+
+
+   d)	Obtain a prediction interval for a new observation Yh(new) when Xh1 = 5 and 
+Xh2 = 4. Use a 99 percent confidence coefficient. (5pts) 
+
+```{r problem 3 d}
+
+Xh = data.frame(X1 = 5, X2 = 4)
+#print(predict.lm(Brand.reg, Xh, se.fit= TRUE))
+
+predict.lm(Brand.reg, Xh, se.fit= TRUE, interval="predict", level=0.99)
+```
+
+## Problem 3 d:
+
+For $X_{h1}=5$ and $X_{h2}=4$ at a 99% confidence interval: $\hat{Y}$ = 68.48077 to 86.06923
+This is to say there is 99% confidence that the mean of the prediction falls inbetween 68.48077 to 86.06923.
+
+
+
+\newpage
+## Problem 4
+
+
+4-	Refer to Commercial properties data. The age (X1), operating expenses and taxes (X2), vacancy rates (X3), total square footage (X4), and rental rates (Y). (25pts)
+
+
+   a)	Obtain the scatter plot matrix and the correlation matrix. Interpret these and state your principal findings. (5pts)
+
+```{r problem 4 a}
+ComProp.df = data.frame(read.csv("Commercial Properties.csv"))
+
+plot(ComProp.df)
+round(cor(ComProp.df),3)
+
+```
+## Problem 4 a:
+
+There does not seem to be a problem with colinearity, X2 and X4 have the closest correlation with .441.
+
+
+   b)	Fit regression model for four predictor variables to the data. State the estimated
+regression function. (5pts)
+
+```{r problem 4 b}
+ComProp.reg = lm(Y~X1+X2+X3+X4, data=ComProp.df)
+round(ComProp.reg$coefficients,6)
+```
+
+## Problem 4 b:
+
+$\hat{Y}$ = -0.142034(X1) + 0.282017(X2) + 0.619344(X3) + 0.000008(X4) + 12.200586 
+
+   c)	Obtain the residuals and prepare a QQ plot of the residuals. Does the distribution appear to be fairly symmetrical? (5pts)
+
+```{r problem 4 c}
+#layout(matrix(c(1,2,1,2,3,4,3,4),4,2, byrow=TRUE))
+#plot(ComProp.reg)
+
+ei<-ComProp.reg$residuals
+yhat=ComProp.reg$fitted.values
+stdei<- rstandard(ComProp.reg)
+
+qqnorm(stdei,ylab="Standardized Residuals",xlab="Normal Scores", main="QQ Plot") 
+qqline(stdei,col = "steelblue", lwd = 2)
+
+```
+
+## Problem 4 c:
+
+Yes, the distribution appears to be fairly symmetrical.
+
+
+   d)	Plot the residuals against Y, each predictor variable, and each two-factor interaction terms on separate graphs. Also prepare a normal probability plot. Analyze yours plots and summarize your findings. (5pts)
+
+
+```{r problem 4 d part 1}
+layout(matrix(c(1,2,1,2,3,4,3,4), 4,2, byrow=TRUE))
+lm.fit = lm(Y~X1+X2, data=ComProp.df)
+residuals = lm.fit$residuals
+Y_hat = predict(lm.fit)
+
+X1 = ComProp.df$X1
+X2 = ComProp.df$X2
+X3 = ComProp.df$X3
+X4 = ComProp.df$X4
+
+X1X2 = X1*X2
+X1X3 = X1*X3
+X1X4 = X1*X4
+X2X3 = X2*X3
+X2X4 = X2*X4
+X3X4 = X3*X4
+
+
+plot(residuals~Y_hat, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+
+plot(residuals~X1, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X2, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X3, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X4, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+
+plot(residuals~X1X2, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X1X3, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X1X4, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X2X3, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X2X4, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+plot(residuals~X3X4, ylim=c(-8,8), pch=20)
+abline(h=0, lty=3, col=2)
+
+plot(lm.fit$residuals)
+```
+
+## Problem 4 d:
+
+X1 appears to have a non normal distribution with a viod in the middle of it's values. X3 also has an uneven distribution, which becomes more prevelant with X1X3.
+
+
+   e)	Divide the 81 cases into two groups. placing the 40 cases with the smallest fitted values into group 1 and the remaining cases into group 2. Conduct the Brown-Forsythe test for constancy of the error variance, using $\alpha$= .05. State the decision rule and conclusion. (5pts)
+   
+$$t^*_{BF} = \frac{\overline{d}_1-\overline{d}_2}{s\sqrt{\frac{1}{n_1}+\frac{1}{n_2}}}$$
+
+```{r problem 4 e}
+ei<-ComProp.reg$residuals
+#M=median(ComProp.reg$fitted.values)
+
+newdata <- ComProp.reg$fitted.values[order(ComProp.reg$fitted.values)]
+M = newdata[40]
+
+DM<-data.frame(cbind(ComProp.reg$fitted.values, ComProp.df$X1,ComProp.df$X2,ComProp.df$X3,ComProp.df$X4,ei))
+DM1<-DM[DM[,1]<= M,]
+DM2<-DM[DM[,1]>M,]
+
+M1<-median(DM1[,6])
+M2<-median(DM2[,6])
+
+N1<-length(DM1[,6])
+N2<-length(DM2[,6])
+
+d1<-abs(DM1[,6]-M1)
+d2<-abs(DM2[,6]-M2)
+s2<-sqrt((var(d1)*(N1-1)+var(d2)*(N2-1))/(N1+N2-2))
+Den<- s2*sqrt(1/N1+1/N2)
+Num<- mean(d1)-mean(d2)
+T= Num/Den
+T
+
+# t(.975, 81)
+
+qt(.975, 81-2)
+
+```
+
+## Problem 4 e:
+
+Tstat is less than 1.99045, indicates that null should be accepted. There is no unequal variance.
+
+
+\newpage
+## Problem 5
+
+
+5-	Refer to Problem 4 (Commercial properties data) (10 pts). Three properties with the following characteristics did not have any rental information available.
+
+   a)	Based on the data above in the table. Develop separate prediction intervals for the rental rates of these properties, using a 95 percent statement confidence coefficient in each case. Can the rental rates of these three properties be predicted fairly precisely? What is the family confidence level for the set of three predictions? (10pts)
+
+
+```{r problem 5 a}
+XhDataFrame = data.frame("X1" = c(4,6,12), "X2" = c(10,11.5,12.5), "X3" = c(.1,0,.32), "X4" = c(80000,120000,340000))
+
+#Xh = data.frame(X1 = 5, X2 = 4)
+
+predict.lm(ComProp.reg, XhDataFrame, se.fit= TRUE, interval="predict", level=0.95)
+
+predict.lm(ComProp.reg, XhDataFrame, se.fit= TRUE, interval="confidence", level=0.95)
+
+summary(ComProp.df)
+
+```
+
+## Problem 5 a:
+
+The prediction intervals give a large range for their prediction interval, which might give create larger confidence in being correct, but less precision in overal confidence. The family confidence interval at 95% is a more scoped in range and would generate greater confidence in the precision of the model.
+

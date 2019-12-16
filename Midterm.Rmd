@@ -1,59 +1,264 @@
 ---
-title: "Midterm"
+title: "Midterm - Data Modeling"
 author: "Aaron Rockwell"
 date: "10/19/2019"
 output: pdf_document
 ---
 
+```{r packages backup}
+#install.packages("plyr")
+#install.packages("ggplot2")
+#install.packages("scatterplot3d")
+#install.packages("MASS")
+#install.packages("faraway")
+#install.packages("caTools")
+
+library("caTools")
+library("faraway")
+library("knitr")
+library("plyr")
+library("ggplot2")
+library("scatterplot3d")
+library("MASS")
+```
 
 ## Problem 1
 
-```{Problem 1}
-library(knitr)
-n=120
-Xbar=28
-Ybar=3
-SXX=2340
-SYY=49
-SXY=92
-SSE=46
+# come back to problem one, do not think these are as hashed out as they could be. problem one is for sure wrong
+#it should be a linear PDF because it will equal the average.
+#double check problem 2 b that I need to divide by 2 on the spread, I think so though because of midterm practice
+#double check on the problem with variance if the -3 is significant
 
-b1= SXY/SXX  
-b0 =  Ybar-b1*Xbar
-MSE = SSE/(n-2)
-Var.b1 = MSE/SXX
-Var.bo= MSE*{1/n + Xbar^2 / SXX}
-sb1 = sqrt(Var.b1)
-sb0 = sqrt(Var.bo)
-tc=qt(1-0.05/2,n-2)
-cbind(b1-tc*sb1,b1+tc*sb1)
-cbind(b0-tc*sb0,b0+tc*sb0)
-```
+Let , $Y_i =  \beta_0 + \varepsilon_i$ where  $\epsilon_i$ is independently identically normally distributed with  $N\left(\lambda,\sigma^2\right)N(\lambda,\sigma^2)$ where $\lambda$ is a positive constant. (10 pts)
 
+A) Write the likelihood function (5 pts)
+
+$$L =  \prod_{i=1}^n p(y_i|x_i;\beta_0,\sigma^2) $$
+
+$$L =  \prod_{i=1}^n \frac{1}{\sqrt{2\pi\sigma^2}}exp\left(-\frac{(Y_i-\beta_0)^2}{2\sigma^2}\right) $$
+
+
+B)  Find the MLE estimators for $\beta_0$  and $\sigma^2$ (5 pts)
+
+
+$$Log L = -\frac{n}{2}log2\pi-\frac{n}{2}log\sigma^2 -\frac{1}{2\sigma^2} \sum_{i=1}^n (Y_i-\beta_0)^2 $$
+$$ \frac{\partial L}{\partial \beta_1}=\sum_{i=1}^n (Y_i-(\beta_{0})^2)=0 $$
+$$ \frac{\partial L}{\partial \sigma}=-\frac{n}{\sigma}+\frac{1}{\sigma^3}\sum_{i=1}^n (Y_i-\beta_{0})^2=0 $$
+$$ \sigma^2=\frac{\sum_{i=1}^n (Y_i-\beta_0)^2}{n}$$
 
 \newpage
 ## Problem 2
 
-```{Problem 2}
+Refer to the question 2 data, (40 pts)
+
+A- ) Fit a regression model to predict Y. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? (5pts)
+
+B- ) Calculate the simultaneous 90% confidence interval for (assumed: $b_0~and~b_1$) (5pts)
+ 
+C- ) Calculate the simultaneous 90% confidence intervals for the predicted new X values for 85 and 90. (5 pts)
+
+D- ) Conduct the Brown-Forsythe test to determine whether or not the error variance varies with the level of X. (10 pts)
+
+E- ) Use the Box-Cox procedure to find an appropriate power transformation and perform the transformation. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? (15 pts)
+
+
+```{r problem 2}
+
+question2.df = read.csv("question2.csv")
+
+question2.reg = lm(y~x, data = question2.df)
+
+#plot(question2.reg)
+
+par(mfrow=c(1,2))
+plot(question2.reg$fitted.values,question2.reg$residuals,xlab="Residuals",ylab="Fitted Values")
+qqnorm(question2.reg$residuals, ylab="Standardized Residuals",xlab="Normal Scores", main="QQ Plot") 
+qqline(question2.reg$residuals, col = "steelblue", lwd = 2)
 
 
 ```
+## Problem 2 a answer
+The QQ plot shows that there is non-linearity, also the residuals vs fitted values show an uneven distribution, indicating unequal variance.
+
+
+B- ) Calculate the simultaneous 90% confidence interval for (assumed: $b_0~and~b_1$) (5pts)
+
+```{r problem 2 part b}
+confint(question2.reg,level=1-0.05/2)
+question2.reg
+
+```
+## Problem 2 b answer
+$b_0$ = 923.85932 to 1478.38940
+$b_1$ = 37.08916 to 58.00822
+
+
+
+C- ) Calculate the simultaneous 90% confidence intervals for the predicted new X values for 85 and 90. (5 pts)
+
+```{r problem 2 part c}
+
+Xh<-c(85,90)
+predict.lm(question2.reg, data.frame(x  = c(Xh)),interval = "confidence", level = 1-0.1/2)
+
+
+#Remember there are only TWO (2) values for the interval AND 90%, need to look this up to be sure
+#confidence, not predict
+```
+## Problem 2 c answer
+X=85, $\hat{Y}$ = 4664.317 to 5821.210
+X=90, $\hat{Y}$ = 4857.267 to 6103.746
+
+
+D- ) Conduct the Brown-Forsythe test to determine whether or not the error variance varies with the level of X. (10 pts)
+
+
+```{r problem 2 part d}
+ei = question2.reg$residuals
+
+DM = data.frame(cbind(question2.df$y,question2.df$x,ei))
+
+M = median(question2.df$x)
+
+DM = data.frame(cbind(question2.df$y,question2.df$x,ei))
+
+DM1 = DM[DM[,2]< M,]
+DM2 = DM[DM[,2]>=M,]
+
+M1 = median(DM1[,3])
+M2 = median(DM2[,3])
+
+N1 = length(DM1[,3])
+N2 = length(DM2[,3])
+
+d1 = abs(DM1[,3]-M1)
+d2 = abs(DM2[,3]-M2)
+s2 = sqrt((var(d1)*(N1-1)+var(d2)*(N2-1))/(N1+N2-2))
+Den = s2*sqrt(1/N1+1/N2)
+Num = mean(d1)-mean(d2)
+T = Num/Den
+T
+```
+## Problem 2 d answer
+The t stat is greater than 1 (at 3.267609), indicates that the null should be rejected. There is unequal variance.
+
+
+E- ) Use the Box-Cox procedure to find an appropriate power transformation and perform the transformation. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? (15 pts)
+
+```{r problem 3 part e}
+
+#par(mfrow=c(1,3))
+
+boxcox(question2.reg,seq(0.2,.5,by=0.05))
+
+question2.transf.df = question2.df
+
+question2.transf.df$y = (question2.transf.df$y)^.32
+
+question2.transf.reg = lm(question2.transf.df$y~question2.transf.df$x)
+
+#plot(question2.transf.reg)
+
+plot(question2.transf.reg$fitted.values,question2.transf.reg$residuals,xlab="Residuals",ylab="Fitted Values")
+qqnorm(question2.transf.reg$residuals, ylab="Standardized Residuals",xlab="Normal Scores", main="QQ Plot") 
+qqline(question2.transf.reg$residuals, col = "steelblue", lwd = 2)
+
+```
+## Problem 2 e answer
+The Box-Cox shows a $\lambda$ peak at around .32, this would suggest a power transformation. Transforming Y to the power of .32. The transformation straightened the QQ plot from the previous and the residuals vs fitted has less variance.
+
 
 
 \newpage
 ## Problem 3
 
-```{Problem 3}
+Refer to the question 2 data. (25 pts)
 
+A-) Create development sample and hold out sample. Development sample is a random sample of 70% of the data and hold out sample is the remainder 30% of the data. Use set.seed(1023) to select the samples. (10 pts)
+
+B-)Build the model on the development sample. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? (5 pts)
+
+C-)Calculate R Square on the hold out sample (hint: calculate SSE, SSR and SST on the hold out sample). (10 pts)
+
+
+```{r problem 3 a}
+set.seed(1023)
+
+ind = sample(1:nrow(question2.df), size =nrow(question2.df)*0.70)
+dev = question2.df[ind,]
+holdout = question2.df[-ind,]
+
+par(mfrow=c(1,2))
+plot(dev)
+plot(holdout)
 
 ```
+## Problem 3 a answer
+Created that samples as shown in the code above as dev and holdout. Also, plotted to show selection.
+
+
+
+
+B-)Build the model on the development sample. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? (5 pts)
+
+```{r problem 3 b}
+
+dev.reg = lm(y~x,data=dev)
+plot(dev.reg$fitted.values,dev.reg$residuals,xlab="Residuals",ylab="Fitted Values")
+qqnorm(dev.reg$residuals, ylab="Standardized Residuals",xlab="Normal Scores", main="QQ Plot") 
+qqline(dev.reg$residuals, col = "steelblue", lwd = 2)
+
+```
+## Problem 3 b answer
+The plots show the same issues that effected the complete dataset, with the QQ not showing a good fit and the probability that the function would need to be transformed.
+
+
+
+C-)Calculate R Square on the hold out sample (hint: calculate SSE, SSR and SST on the hold out sample). (10 pts)
+
+```{r problem 3 b}
+holdout.df = data.frame(cbind(holdout$y,holdout$x,predict(dev.reg, holdout)))
+#holdout.df
+
+#SSE = sum((Y - Yhat)^2)
+SSE = sum((holdout.df$X1-holdout.df$X3)^2)
+SSE
+
+#SSR sum(Yi-Yaverage)
+Yhat.holdout = mean(holdout.df$X1)
+SSR = sum((holdout.df$X3-Yhat.holdout)^2)
+SSR
+
+#2.9
+
+#SSTO = SSR + SSE
+#SSR = 3.588
+#SSE = 45.818
+#SSTO = 3.588 + 45.818
+#R.Squared = 1 - SSE / (SSR + SSE)
+R.Squared.holdout = 1 - SSE / (SSR + SSE)
+R.Squared.holdout
+
+#summary(question2.reg)
+
+```
+## Problem 3 c answer
+
+R-Squared for the sample set is .1654616
 
 
 \newpage
 ## Problem 4
 
-```{Problem 4}
+A-) Fit a linear regression function. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? (5 pts)
 
+B-) Conduct the Breusch-Pagan test to determine whether or not the error variance varies with the level of X. Use α= .05. State the alternatives. decision rule, and conclusion. Is your conclusion consistent with your preliminary findings in part (a)? (10 pts)
+
+
+```{r problem 4 part a}
+question2.df = read.csv("question4.csv")
+
+question2.reg = lm(y~x, data = question2.df)
 
 ```
 
@@ -61,29 +266,7 @@ cbind(b0-tc*sb0,b0+tc*sb0)
 \newpage
 ## Problem 5
 
-```{Problem 5}
+```{r problem 5}
 
 
 ```
-
-
-
-\newpage
-## Problem 6
-
-```{Problem 6}
-
-
-```
-
-
-
-
-\newpage
-## Problem 7
-
-```{Problem 7}
-
-
-```
-

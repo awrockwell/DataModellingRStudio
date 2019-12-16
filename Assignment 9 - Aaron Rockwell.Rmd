@@ -1,0 +1,574 @@
+---
+title: "Assignment 9"
+author: "Aaron Rockwell"
+date: "12/1/2019"
+output: pdf_document
+---
+
+1-Refer to Employee salaries data. A group of high-technology companies agreed to share employee salary information in an effort to establish salary ranges for technical positions in research and development. Data obtained for each employee included current salary (Y), a coded variable indicating highest academic degree obtained (1 = bachelor's degree, 2 = master's degree; 3 = doctoral degree), years of experience since last degree (X3), and the number of persons currently supervised (X4).  (40 pts)
+ 
+a) Create two indicator variables for highest degree attained: (5pts)
+
+```{r problem 1 a}
+#install.packages("genridge")
+library(genridge)
+#install.packages("glmnet")
+library(glmnet)
+#install.packages("RobRSVD")
+library(RobRSVD)
+#install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+
+EmpSal.df = data.frame(read.csv("Employee  Salaries.csv"))
+
+EmpSal.df$X1 = ifelse(EmpSal.df$Degree == 2, 1, 0)
+EmpSal.df$X2 = ifelse(EmpSal.df$Degree == 3, 1, 0)
+head(EmpSal.df)
+```
+
+## Problem 1 a:
+
+See above table and code for solution.
+
+
+b) Regress Y on X1, X2, X3 and X4, using a first-order model and ordinary least squares, obtain the residuals. and plot them against $\hat{Y}$. What does the residual plot suggest? (5pts)
+
+```{r problem 1 b}
+EmpSal.reg  = lm(Y~X1+X2+X3+X4, data=EmpSal.df)
+EmpSal.reg
+plot(EmpSal.reg,  which=1)
+
+```
+
+## Problem 1 b:
+
+Residual plot suggests that the data is uneven distributed with the vertical axis showing an increase in volatility as the fitted values increase.
+
+c) Divide the cases into two groups, placing the 33 cases with the smallest fitted values $\hat{Y_1}$ into group 1 and the other 32 cases into group 2. Conduct the Brown-Forsythe test for constancy of the error variance, using $\alpha$ = .01. State the decision rule and conclusion? (5 pts)
+
+```{r problem 1 c}
+
+ei = EmpSal.reg$residuals
+
+newdata = EmpSal.reg$fitted.values[order(EmpSal.reg$fitted.values)]
+M = newdata[33]
+
+DM = data.frame(cbind(EmpSal.reg$fitted.values, EmpSal.df$X1,EmpSal.df$X2,EmpSal.df$X3,EmpSal.df$X4,ei))
+DM1 = DM[DM[,1]<= M,]
+DM2 = DM[DM[,1]>M,]
+
+M1<-median(DM1[,6])
+M2<-median(DM2[,6])
+
+N1<-length(DM1[,6])
+N2<-length(DM2[,6])
+
+d1<-abs(DM1[,6]-M1)
+d2<-abs(DM2[,6]-M2)
+s2<-sqrt((var(d1)*(N1-1)+var(d2)*(N2-1))/(N1+N2-2))
+Den<- s2*sqrt(1/N1+1/N2)
+Num<- mean(d1)-mean(d2)
+T= Num/Den
+T
+
+#anova(EmpSal.reg)
+nrow(EmpSal.df)
+#F(l-alpha/2; 1, n-2)
+qt((1-.01/2), 65-2)
+
+```
+
+## Problem 1 c:
+
+Tstat (4.659428) is greater than 2.656145, indicates that null should be rejected. There is unequal variance in the model.
+
+
+d) 	Plot the absolute residuals against X3, and against X4. What do these plots suggest about the relation between the standard deviation of the error term and X3, and X4? (5pts)
+
+```{r problem 1 d}
+plot(EmpSal.df$X3,abs(EmpSal.reg$residuals))
+plot(EmpSal.df$X4,abs(EmpSal.reg$residuals))
+```
+
+## Problem 1 d:
+
+The plots shows a megaphone shape, meaning error variance increases with X_3 and X_4.
+
+e) Estimate the standard deviation function by regressing the absolute residuals against X3 and X4 in first-order form, and then calculate the estimated weight for each case using equation 11.16a on the book. (5pts)
+
+```{r problem 1 e}
+
+AbsRes.reg = lm(abs(EmpSal.reg$residuals)~EmpSal.df$X3+EmpSal.df$X4)
+AbsRes.reg
+#1/(s_i)^2
+
+AbsRes.reg.weighted = 1/AbsRes.reg$fitted.values^2
+head(AbsRes.reg.weighted)
+
+```
+
+## Problem 1 e:
+
+Absolute residuals estimate = 0.3996(X3) + 0.2695(X4) + 2.4204
+
+Estimated weight for each fitted value is calculated and shown above.
+
+f)  Using the estimated weights, obtain the weighted least squares fit of the regression model. Are the weighted least squares estimates of the regression coefficients similar to the ones obtained with ordinary least squares in part (b)? (5 pts)
+
+```{r problem 1 f}
+#b_w = (X'WX)^-1 X'WY
+#b = (X'X)^-1 Y'X
+EmpSal.reg
+
+XTransp = rbind(c(1),c(EmpSal.df$X1),c(EmpSal.df$X2),c(EmpSal.df$X3),c(EmpSal.df$X4))
+XMatrix = cbind(c(1),c(EmpSal.df$X1),c(EmpSal.df$X2),c(EmpSal.df$X3),c(EmpSal.df$X4))
+YMatrix = EmpSal.df$Y
+YTransp = rbind(c(1),c(EmpSal.df$Y))
+
+XTY = XTransp%*%YMatrix
+XTXinv = solve((XTransp%*%XMatrix))
+
+XTWY = XTransp%*%(YMatrix * AbsRes.reg.weighted)
+XTWXinv = solve((XTransp%*%(XMatrix * AbsRes.reg.weighted)))
+
+
+#b = (X'X)^-1 Y'X
+
+bMatrix = XTXinv%*%XTY
+bMatrix
+
+bwMatrix = XTWXinv%*%XTWY
+bwMatrix
+
+```
+
+## Problem 1 f:
+
+Regression for part b: 
+
+(Intercept)           X1           X2           X3           X4  
+     54.102      -22.631      -11.819        1.258        1.852  
+
+Regression for part f:      
+
+(Intercept)           X1           X2           X3           X4  
+     56.110      -26.684      -15.785        1.425        1.724
+     
+Subtle differences in the coefficients.
+
+
+g) Compare the estimated standard deviations of the weighted least squares coefficient estimates in part (f) with those for the ordinary least squares estimates in part (b). What do you find? (5 pts)
+
+```{r problem 1 g}
+summary(EmpSal.reg)
+EmpSal.reg.weighted = EmpSal.reg
+EmpSal.reg.weighted$coefficients[1] = 56.110
+EmpSal.reg.weighted$coefficients[2] = -26.684
+EmpSal.reg.weighted$coefficients[3] = -15.785
+EmpSal.reg.weighted$coefficients[4] = 1.425
+EmpSal.reg.weighted$coefficients[5] = 1.724
+coef(EmpSal.reg.weighted)
+#summary (EmpSal.reg.weighted)
+EmpSal.reg.weighted.pred = predict.lm(EmpSal.reg.weighted, EmpSal.df)
+#summary(EmpSal.reg.weighted.pred)
+
+X <- model.matrix(EmpSal.reg)
+
+sigma2 <- sum((EmpSal.df$Y - EmpSal.reg.weighted.pred)^2) / (nrow(X) - ncol(X))
+
+sqrt(sigma2)
+sqrt(diag(solve(crossprod(X))) * sigma2)
+
+```
+
+## Problem 1 g:
+
+The standard error of each coefficient increased, which would mean an error in my calculation, because the error should decrease.
+
+
+
+h) Iterate the steps in parts (e) and (f) one more time. Is there a substantial change in the estimated regression coefficients? If so, what should you do? (10 pts)
+
+```{r problem 1 h}
+
+AbsRes.reg.weighted = 1/EmpSal.reg.weighted.pred^2
+#head(AbsRes.reg.weighted)
+
+#b_w = (X'WX)^-1 X'WY
+#b = (X'X)^-1 Y'X
+#EmpSal.reg
+
+XTransp = rbind(c(1),c(EmpSal.df$X1),c(EmpSal.df$X2),c(EmpSal.df$X3),c(EmpSal.df$X4))
+XMatrix = cbind(c(1),c(EmpSal.df$X1),c(EmpSal.df$X2),c(EmpSal.df$X3),c(EmpSal.df$X4))
+YMatrix = EmpSal.df$Y
+YTransp = rbind(c(1),c(EmpSal.df$Y))
+
+XTY = XTransp%*%YMatrix
+XTXinv = solve((XTransp%*%XMatrix))
+
+XTWY = XTransp%*%(YMatrix * AbsRes.reg.weighted)
+XTWXinv = solve((XTransp%*%(XMatrix * AbsRes.reg.weighted)))
+
+
+#b = (X'X)^-1 Y'X
+
+#bMatrix = XTXinv%*%XTY
+#bMatrix
+
+bwMatrix = XTWXinv%*%XTWY
+bwMatrix
+
+```
+
+## Problem 1 h:
+
+Regression for part b: 
+
+(Intercept)           X1           X2           X3           X4  
+     54.102      -22.631      -11.819        1.258        1.852  
+
+Regression for part f:      
+
+(Intercept)           X1           X2           X3           X4  
+     56.110      -26.684      -15.785        1.425        1.724
+
+Regression for part h:      
+
+(Intercept)           X1           X2           X3           X4  
+     55.207      -25.334      -14.646        1.392        1.813
+     
+The coefficients backed in between the first regression and second weighted regression.
+     
+
+\newpage
+## Problem 2: 
+
+2- Refer to the Weight and height. The weights and heights of twenty male 'Students in a freshman class are recorded in order to see how well weight (Y, in pounds) can be predicted from height (X, in inches). Assume that first-order regression is appropriate. (30 pts)
+
+
+a) Fit a simple linear regression model using ordinary least squares, and plot the data together with the fitted regression function. Also, obtain an Index plot of Cook s distance. What do these plots suggests? (5pts)
+
+```{r problem 2 a}
+WtHt.df = data.frame(read.csv("Weight and Height.csv"))
+#WtHt.df
+
+WtHt.reg = lm(Y~X, data=WtHt.df)
+#plot(WtHt.df$X,WtHt.reg$fitted.values)
+with(WtHt.df,plot(X, Y))
+   abline(WtHt.reg)
+plot(WtHt.reg, which=4)
+
+```
+
+## Problem 2 a:
+
+The two plots show that value two appears to be an outlier and deserves further investigation.
+
+b) Obtain the scaled residuals in equation 11.47 and use the Huber weight function (equation 11.44) to obtain case weights for a first iteration of IRLS robust regression. Which cases receive the smallest Huber weights? Why? (10 pts)
+
+```{r problem 2 b}
+
+
+# MAD = 1/.6745 * median[e-median[e]]
+
+#u_i = e_i /MAD
+
+#help(mad)
+
+WtHt.MAD = mad(WtHt.reg$residuals, center = median(WtHt.reg$residuals), constant = .6745, na.rm = FALSE, low = FALSE, high = FALSE)
+
+WtHt.ui = WtHt.reg$residuals / WtHt.MAD
+
+WtHt.MAD
+
+huberWeightLS(WtHt.ui, 1.345)
+
+WtHt.HuberWts = huberWeightLS(WtHt.ui, 1.345)
+head(WtHt.HuberWts)
+```
+
+## Problem 2 b:
+
+Item 2 and 3 had the smallest weights, and they are also the largest in Cooks distance.
+
+c) Using the weights calculated in part (b), obtain the weighed least squares estimates of the regression coefficients. How do these estimates compare to those found in part (a) using ordinary least squares? (5pts)
+
+```{r problem 2 c}
+
+#b_w = (X'WX)^-1 X'WY
+#b = (X'X)^-1 Y'X
+WtHt.reg 
+# WtHt.HuberWts
+
+XTransp = rbind(c(1),c(WtHt.df$X))
+XMatrix = cbind(c(1),c(WtHt.df$X))
+YMatrix = WtHt.df$Y
+YTransp = rbind(c(1),c(WtHt.df$Y))
+
+XTY = XTransp%*%YMatrix
+XTXinv = solve((XTransp%*%XMatrix))
+
+XTWY = XTransp%*%(YMatrix * WtHt.HuberWts)
+XTWXinv = solve((XTransp%*%(XMatrix * WtHt.HuberWts)))
+
+
+#b = (X'X)^-1 Y'X
+
+bMatrix = XTXinv%*%XTY
+bMatrix
+
+bwMatrix = XTWXinv%*%XTWY
+bwMatrix
+
+WtHt.df.iter1 = WtHt.df
+WtHt.df.iter1$fitted1 = WtHt.df.iter1$X * 5.906439 - 241.225387
+
+head(WtHt.df.iter1)
+head(WtHt.reg$fitted.values)
+with(WtHt.df.iter1,plot(X, fitted1))
+with(WtHt.reg,plot(WtHt.df$X, fitted.values))
+
+plot(WtHt.df.iter1$X,WtHt.df.iter1$fitted1,type="l",col="red")
+lines(WtHt.df$X,WtHt.reg$fitted.values,type="l", col="green")
+plot(WtHt.df$X,WtHt.df$Y, col="orange")
+```
+
+## Problem 2 c:
+
+The coefficients create a steeper slope, which showcases accounting against the outliers of 2 and 3.
+
+
+d) Continue the IRLS procedure for two more iterations. Which cases receive the smallest weights in the final iteration? How do the final IRLS robust regression estimates compare to the ordinary least squares estimates obtained in part (a)? (10 pts)
+
+```{r problem 2 d}
+#res = y- yhat
+print("Weights 1st Iteration")
+head(WtHt.HuberWts)
+
+ei = WtHt.df$Y - WtHt.df.iter1$fitted1
+
+WtHt.MAD = mad(ei, center = median(ei), constant = .6745, na.rm = FALSE, low = FALSE, high = FALSE)
+
+WtHt.ui = ei / WtHt.MAD
+
+#WtHt.MAD
+
+#huberWeightLS(WtHt.ui, 1.345)
+
+WtHt.HuberWts = huberWeightLS(WtHt.ui, 1.345)
+#head(WtHt.HuberWts)
+
+#WtHt.reg 
+print("Weights 2nd Iteration")
+head(WtHt.HuberWts)
+
+XTransp = rbind(c(1),c(WtHt.df$X))
+XMatrix = cbind(c(1),c(WtHt.df$X))
+YMatrix = WtHt.df$Y
+YTransp = rbind(c(1),c(WtHt.df$Y))
+
+XTY = XTransp%*%YMatrix
+XTXinv = solve((XTransp%*%XMatrix))
+
+XTWY = XTransp%*%(YMatrix * WtHt.HuberWts)
+XTWXinv = solve((XTransp%*%(XMatrix * WtHt.HuberWts)))
+
+bwMatrix = XTWXinv%*%XTWY
+#bwMatrix
+
+WtHt.df.iter1$fitted2 = WtHt.df.iter1$X * bwMatrix[2] + bwMatrix[1]
+
+######################################## Third Iteration: #########################
+
+ei = WtHt.df$Y - WtHt.df.iter1$fitted2
+
+WtHt.MAD = mad(ei, center = median(ei), constant = .6745, na.rm = FALSE, low = FALSE, high = FALSE)
+
+WtHt.ui = ei / WtHt.MAD
+
+#WtHt.MAD
+
+#huberWeightLS(WtHt.ui, 1.345)
+
+WtHt.HuberWts = huberWeightLS(WtHt.ui, 1.345)
+#head(WtHt.HuberWts)
+
+#WtHt.reg 
+print("Weights 3nd Iteration")
+head(WtHt.HuberWts)
+
+XTransp = rbind(c(1),c(WtHt.df$X))
+XMatrix = cbind(c(1),c(WtHt.df$X))
+YMatrix = WtHt.df$Y
+YTransp = rbind(c(1),c(WtHt.df$Y))
+
+XTY = XTransp%*%YMatrix
+XTXinv = solve((XTransp%*%XMatrix))
+
+XTWY = XTransp%*%(YMatrix * WtHt.HuberWts)
+XTWXinv = solve((XTransp%*%(XMatrix * WtHt.HuberWts)))
+
+bwMatrix = XTWXinv%*%XTWY
+bwMatrix
+
+WtHt.df.iter1$fitted3 = WtHt.df.iter1$X * bwMatrix[2] + bwMatrix[1]
+
+
+head(WtHt.df.iter1)
+#WtHt.HuberWts
+
+
+```
+
+
+## Problem 2 d:
+
+The weights keep dropping for the potential outliers, with 2 and 3 (among others) being weighted less and less each iteration.
+
+
+\newpage
+## Problem 3: 
+
+3- Refer to the Prostate Cancer data set in Appendix C.5 and Homework 7&8. Select a random sample of 65 observations to use as the model-building data set (use set.seed(1023)). Use the remaining observations for the test data. (10 pts)
+
+
+a) Develop a regression tree for predicting PSA. Justify your choice of number of regions (tree size), and interpret your regression tree. Test the performance of the model on the test data. (5 pts)
+
+```{r problem 3 a}
+#Used in HW7: Cancer.volume, Capsular.penetration
+# R2 = 1 - SSE / SST
+
+ProCan.df = data.frame(read.csv("Prostate Cancer.csv"))
+
+set.seed(1023)
+
+ind = sample(1:nrow(ProCan.df), size = 65)
+dev = ProCan.df[ind,]
+holdout = ProCan.df[-ind,]
+
+ProCan.tree = rpart(PSA.level ~ ., data=dev)
+                                                       #Cancer.volume+Capsular.penetration+Age+Weight+Benign.prostatic.hyperplasia+Seminal.vesicle.invasion+Gleason.score, data=dev)
+#ProCan.tree
+prp(ProCan.tree)
+
+tree.pred = predict(ProCan.tree, newdata=holdout)
+
+#tree.pred
+tree.sse.pred = sum((tree.pred - mean(holdout$PSA.level))^2)
+tree.ssr.pred = sum((tree.pred - holdout$PSA.level)^2)
+
+print("Pred R^2:")
+1-tree.ssr.pred /(tree.sse.pred + tree.ssr.pred)
+# R2 = 1 - SSE / SST
+# R2 = 1 - (SSR/(SSE + SSR))
+#tree.sse.pred/nrow(holdout)
+
+tree.pred = predict(ProCan.tree, newdata=dev)
+
+#tree.pred
+tree.sse.pred = sum((tree.pred - mean(dev$PSA.level))^2)
+tree.ssr.pred = sum((tree.pred - dev$PSA.level)^2)
+
+print("Train R^2:")
+1-tree.ssr.pred /(tree.sse.pred + tree.ssr.pred)
+
+```
+
+## Problem 3 a:
+
+The model auto-selected Cancer.volume and Capsular.penetration, which were the two predictors selected from homework 7. Predicted (test) model had an r^2 of .1839 and the training set had an r^2 of .4581, which is a significant drop in predictability.
+
+
+b) Compare the performance of your regression tree model with that of the best regression model obtained in HW7. Which model is more easily interpreted and why? (5pts)
+
+```{r problem 3 b}
+
+HW7.ProCan.lm = lm(PSA.level ~ Capsular.penetration+Cancer.volume, data=dev)
+
+summary(HW7.ProCan.lm)
+
+HW7.pred = predict.lm(HW7.ProCan.lm, holdout)
+
+
+HW7.pred.sse.pred = sum((HW7.pred - mean(holdout$PSA.level))^2)
+HW7.pred.ssr.pred = sum((HW7.pred - holdout$PSA.level)^2)
+
+print("Test R^2:")
+1-HW7.pred.ssr.pred /(HW7.pred.sse.pred + HW7.pred.ssr.pred)
+
+
+```
+
+## Problem 3 b:
+
+The regression model from HW7 held up better than the decision tree with a train r^2 of .5266 versus tree train of .4581, and a test r^2 of .244 vs .1839 for the tree test. Given this information, it's unfortunate, but the tree is probably easier to interpret or explain to a stakeholder.
+
+
+\newpage
+## Problem 4:
+
+4- Refer to Cement composition. The variables collected were the amount of tricalcium aluminate (X1), the amount of tricalcium silicate (X2), the amount of tetracalcium alumino ferrite (X3), the amount of dicalcium silicate (X4), and the heat evolved in calories per gram of cement (Y). (20pts)
+ 
+a) Fit regression model for four predictor variables to the data. State the estimated regression function.  (5pts)
+
+
+```{r problem 4 a}
+
+CemComp.df = data.frame(read.csv("Cement Composition.csv"))
+
+CemComp.reg = lm(Y~.,data=CemComp.df)
+CemComp.reg
+
+```
+
+## Problem 4 a:
+
+$\hat{Y}= 1.5511X1+0.5102X2+0.1019X3-0.1441X4+62.4054$
+
+b) Obtain the estimated ridge standardized regression coefficients, variance inflation factors, and R2. Suggest a reasonable value for the biasing constant c (use seq(0,1,by=0.01)) based on the ridge trace, VIF values, and R2 values. (5pts) (hint: use vif.ridge function under library(genride), you can also get MSEs under this library)
+
+```{r problem 4 b}
+help(genridge)
+#help(ridge)
+CemComp.ridge = ridge(Y~., data=CemComp.df)
+print("Coefficients")
+CemComp.ridge
+print("VIF")
+vif(CemComp.ridge)
+
+CemComp.reg = lm(Y~.,data=CemComp.df)
+SST = sum(anova(CemComp.reg)["Sum Sq"])
+
+sse.pred = CemComp.ridge$mse * nrow(CemComp.df)
+ssr.pred = SST - sse.pred
+
+print("R^2:")
+1- ssr.pred/SST
+
+```
+
+## Problem 4 b:
+
+Values showcased above.
+
+
+c) Transform the estimated standardized ridge regression coefficients selected in part (b) to the original variables and obtain the fitted values for the 13 cases. How similar are these fitted values to those obtained with the ordinary least squares fit ill part (a)? (5pts)
+
+
+d) Fit Lasso and Elastic net models and compare it against the Ridge regression model results. (5pts) (Hint: Calculate SSEs for each model)
+
+```{r problem 4 d}
+#glmnet
+#CemComp.df
+lambda = seq(0,1,by=0.01)
+
+x <- model.matrix(Y~., CemComp.df)[,-1]
+y <- CemComp.df$Y
+
+ridge.mod = glmnet(x, y, alpha = 0, lambda = lambda)
+head(ridge.mod)
+#predict(ridge.mod, s = 0, exact = T, type = 'coefficients')[1:4,]
+```
+
+## Problem 4 d:

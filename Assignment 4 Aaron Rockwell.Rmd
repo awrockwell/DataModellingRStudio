@@ -383,7 +383,7 @@ summary(PlasHard.reg)
 2.03438 - 2.144787*0.09039
 2.03438 + 2.144787*0.09039
 
-#confint(PlasHard.reg, adjust.method = "bonferroni")
+confint(PlasHard.reg, adjust.method = "bonferroni")
 
 ```
 
