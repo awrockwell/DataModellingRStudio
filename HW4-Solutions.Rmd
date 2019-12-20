@@ -1,0 +1,309 @@
+---
+title: "HW4-Solutions"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+## Problem 1
+### 	Refer to the Production Time data set.(20 Pts)
+### a)	Prepare a scatter plot of the data Does a linear relation appear adequate here? Would a transformation on X or Y be more appropriate here? Why? (4pts)
+### b)	Use the transformation X' = √X and obtain the estimated linear regression function for the transformed data. (4pts)
+### c)	Plot the estimated regression line and the transformed data. Does the regression line appear to be a good fit to the transformed data? (4pts)
+### d)	Obtain the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? (4pts)
+### e)	Express the estimated regression function in the original units. ( 4 pts)
+
+
+### _Solution:_
+### a) Plots indicate that errors are approximately normally distributed and have approximately constant variance. Therefore, X should be transformed, log or square root would be appropriate transformation based on the graph.
+```{r}
+library(knitr)
+par(mfrow=c(1,1))
+plot(Production.Time$X,Production.Time$Y)
+f1<-lm(Y~X,data=Production.Time)
+summary(f1)
+par(mfrow=c(2,2))
+plot(f1)
+```
+
+
+### b)
+### _Solution:_
+
+There is a slight increase in Rsquare, the new model is Y = 1.2547 + 3.6235 * SQRT(X)
+
+```{r}
+f1.2<-lm(Y~sqrt(X),data=Production.Time)
+summary(f1.2)
+
+```
+### c)
+### _Solution:_ it does fit well.
+ 
+
+```{r}
+par(mfrow=c(1,1))
+plot(sqrt(Production.Time$X),Production.Time$Y)
+abline(f1.2)
+```
+
+
+
+
+### d)
+### _Solution:_ it is a good fit.
+
+
+```{r}
+ei<-f1.2$residuals
+yhat<-f1.2$fitted.values
+par(mfrow=c(1,2))
+plot(ei,yhat,xlab="Errors",ylab="Fitted Values")
+stdei<- rstandard(f1.2)
+qqnorm(stdei,ylab="Standardized Residuals",xlab="Normal Scores", main="QQ Plot") 
+qqline(stdei,col = "steelblue", lwd = 2)
+```
+
+### e)
+### _Solution:_ Y = 1.2547 + 3.6235 * SQRT(X)
+
+
+## Problem 2
+### Refer to Solution Concentration data set. (20 pts)
+### a)Fit a linear regression function. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show?(3pts)
+### b)Prepare a scatter plot of the data. What transformation of Y might you try,to achieve constant variance and linearity? (3pts)
+### c)Use the Box-Cox procedure and standardization (3.36) to find an appropriate power transformation by using λ = -.2, -.1,0, .1, .2. What transformation of Y is suggested? (5pts)
+### d)Use the transformation Y' = log Y and obtain the estimated linear regression function for the transformed data. (5pts)
+### e)Plot the estimated regression line and the transformed data Does the regression line appear to be a good fit to the transformed data? (2 pts)
+### f)Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? (2pts)
+### g)Express the estimated regression function in the original units. (2pts)
+
+### a) 
+### _Solution:_ QQ plot shows that the errors are not normally distributed. The errors vs fitted values plot indicate that variances are not equal. However, R square is 81% and the model is significant.  
+
+```{r}
+f2<-lm(Y~X,data=Solution.Concentration)
+summary(f2)
+ei<-f2$residuals
+yhat<-f2$fitted.values
+par(mfrow=c(1,2))
+plot(ei,yhat,xlab="Errors",ylab="Fitted Values")
+stdei<- rstandard(f2)
+qqnorm(stdei,ylab="Standardized Residuals",xlab="Normal Scores", main="QQ Plot") 
+qqline(stdei,col = "steelblue", lwd = 2)
+```
+
+### b)
+### _Solution:_ Log transform on Y.
+
+```{r}
+par(mfrow=c(1,1))
+plot(Solution.Concentration$X,Solution.Concentration$Y)
+abline(f2)
+```
+### c)
+### _Solution:_ Boxcox transformation indicate log transformation.
+
+```{r}
+library(MASS)
+boxcox(f2,lambda = seq(-2,2,by=0.1))
+```
+### d)
+### _Solution:_ log(Y)= 1.50792 - 0.44993X,  the r-square is almost 100%. It is a perfect fit. 
+
+```{r}
+f2.1<-lm(log(Y)~X,data=Solution.Concentration)
+summary(f2.1)
+```
+### e)
+### _Solution:_  It is a perfect fit. 
+
+```{r}
+par(mfrow=c(1,1))
+plot(Solution.Concentration$X,log(Solution.Concentration$Y),xlab="X",ylab="Transformed Y")
+abline(f2.1)
+```
+### f)
+### _Solution:_  Error variances look constant, errors are approximately normally distributed.  
+
+```{r}
+ei<-f2.1$residuals
+yhat<-f2.1$fitted.values
+par(mfrow=c(1,2))
+plot(ei,yhat,xlab="Errors",ylab="Fitted Values")
+stdei<- rstandard(f2.1)
+qqnorm(stdei,ylab="Standardized Residuals",xlab="Normal Scores", main="QQ Plot") 
+qqline(stdei,col = "steelblue", lwd = 2)
+```
+### g)
+### _Solution:_  log(Y)= 1.50792 - 0.44993X ==> Y=exp(1.50792 - 0.44993X)
+
+## Problem 3
+###Refer to Crime rate data set. (25 pts)
+### a)	Fit a linear regression function. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? (3pts)
+### b)	Conduct the Brown-Forsythe test to determine whether or not the error variance varies with the level of X. Divide the data into the two groups, X≤69, X > 69, and use α= .05. State the decision rule and conclusion. Does your conclusion support your preliminary findings in part (a)? (10 pts)
+### c)	Conduct the Breusch-Pagan test to determine whether or not the error variance varies with the level of X. Use α= .05. State the alternatives. decision rule, and conclusion. Is your conclusion consistent with your preliminary findings in part (a and b)? (12 pts)
+
+### a)
+### _Solution:_ The model is significant, however Rsquare is low. The graphs do not indicate non constant variance or significant departures from the normal distribution.
+```{r}
+f3<-lm(Y~X,data=Crime.Rate)
+summary(f3)
+ei<-f3$residuals
+yhat<-f3$fitted.values
+par(mfrow=c(1,2))
+plot(ei,yhat,xlab="Errors",ylab="Fitted Values")
+stdei<- rstandard(f3)
+qqnorm(stdei,ylab="Standardized Residuals",xlab="Normal Scores", main="QQ Plot") 
+qqline(stdei,col = "steelblue", lwd = 2)
+```
+### b)
+### _Solution:_ Ho: Error variance is constant
+###             Ha: Error variance is NOT constant; T stat is less than 1, accept null.Error variances are constant.
+```{r}
+ei<-f3$residuals
+DM<-data.frame(cbind(Crime.Rate$X,Crime.Rate$Y,ei))
+DM1<-DM[DM[,1]<=69,]
+DM2<-DM[DM[,1]>69,]
+
+M1<-median(DM1[,3])
+M2<-median(DM2[,3])
+N1<-length(DM1[,3])
+N2<-length(DM2[,3])
+
+d1<-abs(DM1[,3]-M1)
+d2<-abs(DM2[,3]-M2)
+s2<-sqrt((var(d1)*(N1-1)+var(d2)*(N2-1))/(N1+N2-2))
+Den<- s2*sqrt(1/N1+1/N2)
+Num<- mean(d1)-mean(d2)
+T= Num/Den
+T
+```
+### c)
+### _Solution:_ Ho: Gamma is 0
+###             Ha: Gamma is NOT 0; the slope is not significant. R square is almost zero, no need to perform the F test, accept null, the error variance is constant.
+```{r}
+ei2<-(f3$residuals)^2
+f3.1<-lm(ei2~Crime.Rate$X)
+```
+## Problem 4
+###	Refer to Plastic Hardness dataset.(15pts)
+###	a)	Fit a linear regression function. Obtain, the residuals and plot them against the fitted values. Also prepare a normal probability plot. What do your plots show? ( 3 pts)
+###	b)	Obtain Bonferroni joint confidence intervals for β0 and β1, using a 90 percent family confidence coefficient. Interpret your confidence intervals. (3 pts)
+###	c)	Are bo and b1 positively or negatively correlated here? Is this reflected in your joint confidence intervals in part (b)  (3 pts)
+###	d)	Management wishes to obtain interval estimates of the mean hardness when the elapsed time is 20, 30, and 40 hours, respectively. Calculate the desired confidence intervals using the Bonferroni procedure and a 90 percent family confidence coefficient. What is the meaning of the family confidence coefficient here? (3 pts)
+###	e)	The next two test items will be measured after 30 and 40 hours of elapsed time, respectively. Predict the hardness for each of these two items, using the most efficient procedure and a 90 percent family confidence coefficient. (3pts)
+
+
+### a)
+### _Solution:_ The model is significant. The Rsquare is 97%. The graphs do not indicate nonconstant variance or departure from the normal distribution.
+```{r}
+f4<-lm(Y~X,data=Plastic.Hardness)
+summary(f4)
+ei<-f4$residuals
+yhat<-f4$fitted.values
+par(mfrow=c(1,2))
+plot(ei,yhat,xlab="Errors",ylab="Fitted Values")
+stdei<- rstandard(f4)
+qqnorm(stdei,ylab="Standardized Residuals",xlab="Normal Scores", main="QQ Plot") 
+qqline(stdei,col = "steelblue", lwd = 2)
+
+```
+### b)
+### _Solution:_  The confidence intervals are below:
+```{r}
+confint(f4,level=1-0.1/2)
+
+```
+### c)
+### _Solution:_ Yes, they are negatively correlated. 
+
+### d)
+### _Solution:_ The joint confidence intervals are below.
+```{r}
+Xh<-c(20,30,40)
+predict.lm(f4,data.frame(X= c(Xh)),interval = "confidence", level = 1-0.1/3)
+
+```
+### e)
+### _Solution: S = 2.340, B = t(975,14) = 2.145. Bonferroni is more efficent.
+```{r}
+B<-qt(1-0.1/4,14)
+S<-sqrt(2*qf(0.90,2,14))
+cbind(B,S)
+Xh<-c(30,40)
+predict.lm(f4,data.frame(X= c(Xh)),interval = "prediction", level = 1-0.1/2)
+```
+## Problem 5
+### Refer to the CDI data set. Consider the regression relation of number of active physicians to total population.(10 pts)
+### a)	Obtain Bonferroni joint confidence intervals for β0 and β1 using a 95 percent family confidence coefficient. (2 pts)
+### b)	An investigator has suggested that β0 should be -100 and β1 should be .0028. Do the joint confidence intervals in part (a) support this view? Discuss.(2 pts)
+### c)	It is desired to estimate the expected number of active physicians for counties with total population of X = 500, 1000, 5000 thousand with family confidence coefficient .90. Which procedure, the WoIking-Hotelling or the Bonferroni, is more efficient here? (3pts)
+### d)	Obtain the family of interval estimates required in part (c), using the more efficient procedure. Interpret your confidence intervals. (3pts)
+
+
+### a)
+### _Solution:_ The regression model is significant. The Rsquare is %88. The joint confidence intervals are below.
+```{r}
+f5<-lm(Number.of.active.physicians~Total.population,data=CDI)
+summary(f5)
+confint(f5,level=1-0.05/2)
+```
+### b)
+### _Solution:_  the joint confidence intervals: -188.8<bo<-32.5 and 0.0027<b1<0.0029
+### b0=100 and b1=0.0028 fall into the joint confidence intervals. Yes, it does support the investigator's view.
+
+### c)
+### _Solution:_ W = SQRT(2*2.314732)=2.15, B = t(0.97,438) = 1.838493 . Bonferroni is more efficent (B<W).
+```{r}
+B<-qt(1-0.1/3,438)
+W <- sqrt(2*qf(0.90,2,438))
+cbind(B,W)
+```
+
+### d)
+### _Solution:_ See below for the confidence intervals
+```{r}
+Xh<-c(500,1000,5000)
+predict.lm(f5,data.frame(Total.population=c(Xh)),interval = "prediction", level = 1-0.1/3)
+```
+#Problem 6
+##Refer to the SENIC data set. The average length of stay in a hospital (Y) is anticipated to be related to infection risk, available facilities and services, and routine chest X-ray ratio.(10 pts)
+### a)	Regress average length of stay on each of the three predictor variables. State the estimated regression functions. (3 pts)
+### b)	For each of the three fitted regression models, obtain the residuals and prepare a residual plot against X and a normal probability plot. Summarize your conclusions. (3 pts)
+### c)	Obtain the fitted regression function for the relation between length of stay and infection risk after deleting cases 47 (X47 = 6.5, Y47 = 19.56) and 112 (X112 = 5.9, Y112 = 17.94). From this fitted regression function obtain separate 95 percent prediction intervals for new Y observations at X = 6.5 and X = 5.9, respectively. Do observations Y47 and Y112 fall outside these prediction intervals? Discuss the significance of this. (4pts)
+
+## a)
+### _Solution:_ see below for the regression coefficents.
+```{r}
+f6.1<-lm(Length.of.stay~Infection.risk,data=SENIC)
+f6.2<-lm(Length.of.stay~Available.facilities.and.services,data=SENIC)
+f6.3<-lm(Length.of.stay~Routine.chest.X.ray.ratio,data=SENIC)
+coef<-rbind(f6.1$coefficients,f6.2$coefficients,f6.3$coefficients)
+dimnames(coef)[[2]]<-c("bo","b1")
+coef
+```
+### b)
+### _Solution:_ There are outliers in the data, errors are approximately normally distributed.
+```{r}
+par(mfrow=c(1,3))
+stdei<- rstandard(f6.1)
+qqnorm(stdei,ylab="Standardized Residuals",xlab="Infection.risk") 
+qqline(stdei,col = "steelblue", lwd = 2)
+
+stdei<- rstandard(f6.2)
+qqnorm(stdei,ylab="Standardized Residuals",xlab="Available.facilities.and.services") 
+qqline(stdei,col = "steelblue", lwd = 2)
+
+stdei<- rstandard(f6.3)
+qqnorm(stdei,ylab="Standardized Residuals",xlab="Routine.chest.X.ray.ratio") 
+qqline(stdei,col = "steelblue", lwd = 2)
+```
+
+### c)
+### _Solution:_ They fall outside of the prediction invervals. It indicates that these observations are outliers.
+```{r}
+f6.11<-lm(Length.of.stay~Infection.risk,data=SENIC[-c(47,112),])
+summary(f6.11)
+predict.lm(f6.11,data.frame(Infection.risk=c(6.5,5.9)),interval="prediction",level=0.95)
+```

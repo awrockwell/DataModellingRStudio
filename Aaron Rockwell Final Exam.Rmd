@@ -24,3 +24,630 @@ library(gmodels)
 library(randomForest)
 
 ```
+
+\newpage
+## Problem 1:
+
+1.)Use the PR1_Dataset data which contains 5 continuous variables (no categorical variables), the answer the questions below: (25 pts)
+
+a-) Fit a regression model to predict Y by using all variables.  Is there a Multicollinearity in the data? Are the errors Normally distributed with constant variance? Are there any influential or outlier observations? (5pts)
+
+
+```{r problem 1 a}
+
+PR1.df = data.frame(read.csv("PR1_Dataset.csv"))
+
+PR1.reg = lm(Y~.,data=PR1.df)
+
+PR1.reg
+
+print("VIF:")
+vif(PR1.reg)
+
+#anova(PR1.reg)
+#nrow(PR1.df)
+
+drst = rstudent(PR1.reg) 
+tb = qt(1-0.05/(2*40),40-6-1)
+
+sum(abs(drst)>abs(tb))
+
+drst
+tb
+
+#plot(drst)
+
+hii <- hatvalues(PR1.reg)
+#hii
+summary(hii)
+sum(hii>(2*6/40))
+(hii>(2*6/40))
+
+
+```
+
+## Problem 1 a:
+
+Regression model:
+$$\hat{Y}=0.3911X_1+0.8639X_2+0.3616X_3-0.8467X_4+0.1923X_5+155.0304$$ 
+
+Using a threshold of 10 for Variance Inflation Factor, there is not significant multicolinearity in the model, with X4 at 6.278713 as highest VIF value.
+
+The errors are normally distributed with the exception of one outlier at the 36th case of the data (-5.21022269) 
+
+There are three cases that are influencial and could be investigated further (8, 35, and 36)
+
+
+b-) Use the stepwise variable selection procedure to find the best model. Is there a Multicollinearity in the data? Are the errors Normally distributed with constant variance? Are there any influential or outlier observations? (5pts)
+
+
+```{r problem 1 b part a}
+
+f5=lm(Y~X1+X2+X3+X4+X5, data=PR1.df)
+
+#ols_step_both_p(f5,prem=0.05,details=TRUE)
+ols_step_both_p(f5,prem=0.05,details=FALSE)
+```
+
+
+
+```{r problem 1 b part b}
+
+PR1.bestReg = lm(Y~X2+X4, data=PR1.df)
+
+PR1.bestReg
+
+vif(PR1.bestReg)
+
+drst = rstudent(PR1.bestReg) 
+tb = qt(1-0.05/(2*40),40-6-1)
+
+sum(abs(drst)>abs(tb))
+
+drst
+tb
+
+#plot(drst)
+
+hii <- hatvalues(PR1.bestReg)
+summary(hii)
+sum(hii>(2*3/40))
+(hii>(2*3/40))
+
+
+```
+
+## Problem 1 b:
+
+Best model $\hat{Y}=0.7323X_2-1.4652X_4+222.5896$
+
+No multicolinearity present, VIF = 1.544187 (less than 10).
+
+Case 36 is still an outlier at -5.70495773 (outside 3.529649), but the rest of the data is normally distributed.
+
+There are 4 influencial cases in the dataset (4,8,11,36)
+
+
+c-) Use the model built in part b, exclude the observation with the largest cook distance and refit the model and comment the model results (5pts)
+
+
+```{r problem 1 c}
+par(mfrow=c(2,2))
+ols_plot_cooksd_chart(PR1.bestReg)
+
+PR1.noCook.df = PR1.df[-c(36),]
+
+PR1.noCook.reg = lm(Y~X2+X4, data=PR1.noCook.df)
+
+plot(PR1.noCook.reg)
+
+PR1.noCook.reg
+
+summary(PR1.noCook.reg)
+
+```
+
+## Problem 1 c:
+
+Without case 36, the QQ plot has a well-fit line, and the R^2 for the model is 0.8851 (compared to 0.8422).
+
+
+d-) Use the model built in part b, fit the robust regression and compared it against the model in part c, comments on the model results. (5pts)
+
+
+```{r problem 1 d}
+par(mfrow=c(2,2))
+plot(PR1.bestReg, which = 2)
+plot(PR1.noCook.reg, which=2)
+
+plot(PR1.bestReg, which = 1)
+plot(PR1.noCook.reg, which=1)
+
+PR1.bestReg
+PR1.noCook.reg
+
+summary(PR1.bestReg)
+summary(PR1.noCook.reg)
+
+```
+
+## Problem 1 d:
+
+Without case 36 (largest Cooks distance), the QQ plot for the model has a better line, and the residuals vs fitted values is a better fit. 
+
+The model without case 36, puts more weight on X2 and less on X3.
+
+Also, the R^2 improved without case 36 from 0.8422 to .8851.
+
+
+e-) Use the model built in part b, predict Y for X1=75, X2=78, X3=34, X4=18, X5=18 and calculate 95% confidence interval (5pts).
+
+
+```{r problem 1 e}
+
+predict.P1 = data.frame(cbind(X1=75, X2=78, X3=34, X4=18, X5=18))
+
+predict(PR1.bestReg, predict.P1, interval = "confidence")
+
+```
+
+## Problem 1 e:
+
+Using the model from question b (X2 and X4), 253.3316 would be the predicted value with the confidence interval of 95%, the range would be 251.2508 to 255.4124.
+
+
+
+
+\newpage
+## Problem 2:
+
+2.) Use the PR2_Dataset data: X4, X5, X6, and X7 are the categorical variables, Y and remaining independent variables are continuous variables. X4 has two levels, X5 has 4, X6 has 5, and X7 has 3 levels (create dummy variables for the categorical variables).  Answer the questions below: (30 pts)
+
+a-) Fit a regression model to predict Y by using all variables.  Is there a Multicollinearity in the data? Are the errors Normally distributed with constant variance? Are there any influential or outlier observations? (10 pts)
+
+```{r problem 2 a}
+
+PR2.df = data.frame(read.csv("PR2_Dataset.csv"))
+
+#PR2.df
+
+#X4 = 1, 2
+#X5 = 1, 2, 3, 4
+#X6 = 1, 2, 3, 4, 5
+#X7 = 1, 2, 3
+
+Y =  PR2.df$Y
+X1 = PR2.df$X1
+X2 = PR2.df$X2
+X3 = PR2.df$X3
+
+X4 = as.numeric(PR2.df$X4 == 1)
+
+X5a = as.numeric(PR2.df$X5 == 1)
+X5b = as.numeric(PR2.df$X5 == 2)
+X5c = as.numeric(PR2.df$X5 == 3)
+
+X6a = as.numeric(PR2.df$X6 == 1)
+X6b = as.numeric(PR2.df$X6 == 2)
+X6c = as.numeric(PR2.df$X6 == 3)
+X6d = as.numeric(PR2.df$X6 == 4)
+
+X7a = as.numeric(PR2.df$X7 == 1)
+X7b = as.numeric(PR2.df$X7 == 2)
+
+PR2.refit.df = data.frame(cbind(Y,X1,X2,X3,X4,X5a,X5b,X5c,X6a,X6b,X6c,X6d,X7a,X7b))
+
+PR2.refit.reg = lm(Y~.,data=PR2.refit.df)
+
+par(mfrow=c(2,2))
+plot(PR2.refit.reg)
+
+
+print("VIF:")
+vif(PR2.refit.reg)
+
+
+drst = rstudent(PR2.refit.reg) 
+tb = qt(1-0.05/(2*40),40-6-1)
+
+sum(abs(drst)>abs(tb))
+
+#drst
+#tb
+
+#plot(drst)
+
+hii <- hatvalues(PR2.refit.reg)
+#hii
+summary(hii)
+sum(hii>(2*6/40))
+(hii>(2*6/40))
+
+#print("The regression model")
+
+#PR2.refit.reg
+
+ols_plot_cooksd_chart(PR2.refit.reg)
+
+
+```
+
+## Problem 2 a:
+
+The regression model is:
+
+```{r problem 2 a part 2}
+PR2.refit.reg
+```
+
+There is multicolinearity of cases with over 10 VIF, they are: X4, X5a, X5b, X5c, X6a, and X7a.
+
+The error residual vs fitted distribution looks exponential and might need a transformation.
+
+The most significant Cook distance cases are 109 and 91.
+
+The influencial cases are 63, 79, 91, 109.
+
+
+b-) Conduct the Breusch-Pagan for testing unequal variances and document your results (5pts)
+
+```{r problem 2 b}
+
+ei<-PR2.refit.reg$residuals
+
+ei2<-ei^2
+g<-lm(ei2~X1+X2+X3+X4+X5a+X5b+X5c+X6a+X6b+X6c+X6d+X7a+X7b)
+summary(g)
+anova(g)["Sum Sq"]
+anova(PR2.refit.reg)
+nrow(PR2.refit.df)
+SSR<-sum(anova(g)["Sum Sq"])-13260001241805215744
+SSE<- 19409611507
+chi.test<-(SSR/13)/((SSE/121)^2)
+chi.test
+1-pchisq(chi.test,2)
+
+
+```
+
+## Problem 2 b:
+
+Ho: Gamma is 0
+Ha: Gamma is NOT 0 
+
+Gamma is almost zero, accept null, the error variance is constant.
+
+
+c) Use weight least squares regression (perform only one iteration) document your results. (5 pts)
+
+```{r problem 2 c}
+
+abs.ei<-abs(PR2.refit.reg$residuals)
+PR2.refit.rege<-lm(abs.ei~X1+X2+X3+X4+X5a+X5b+X5c+X6a+X6b+X6c+X6d+X7a+X7b)
+si<-PR2.refit.rege$fitted.values
+wi<-1/(si^2)
+
+PR2.refit.regf<-lm(Y~X1+X2+X3+X4+X5a+X5b+X5c+X6a+X6b+X6c+X6d+X7a+X7b,weights=wi)
+summary(PR2.refit.regf)
+rbind(coef(PR2.refit.regf),coef(PR2.refit.reg))
+
+```
+
+## Problem 2 c:
+
+After a round of wieghted regression, 5 coefficient were not defined because of singularities, thus changing the other coefficients significantly.
+
+
+d-) Compare your model in part a against the regression tree and Neural Network Model, and calculate the SSE for each model, which method has the lowest SSE? And explain which model you will choose. (10 pts)
+
+```{r problem 2 d}
+
+f.q4.bestsubset<-PR2.refit.reg
+an=anova(f.q4.bestsubset)
+anova(f.q4.bestsubset)
+SSE.bestsubset = an$`Sum Sq`[14]
+
+
+r.q4.tree<-rpart(Y~.,data=PR2.refit.df)
+plot(r.q4.tree)
+pop<-PR2.refit.df
+SSE.Tree<-sum((predict(r.q4.tree)-pop$Y)^2)
+
+max = apply(pop, 2 , max)
+min = apply(pop, 2 , min)
+scaled = as.data.frame(scale(pop, center = min, scale = max - min))
+NN = neuralnet(Y~X1+X2+X3+X4+X5a+X5b+X5c+X6a+X6b+X6c+X6d+X7a+X7b, scaled , hidden = 6 , linear.output = T )
+
+predict_testNN = compute(NN, scaled [,c(2:14)])
+predict_testNN1 = (predict_testNN$net.result * (max(pop$Y) - min(pop$Y))) + min(pop$Y)
+SSE.NN<-sum((pop$Y-predict_testNN1)^2)
+
+round(data.frame(cbind(SSE.bestsubset,SSE.Tree,SSE.NN)),0)
+
+
+```
+
+## Problem 2 d:
+
+The model with the lowest SSE is the neural net model. Depends on the audience and what is being predicted, but I would prefer the linear regression model, because I can still consider sculpting the model down to selective variable and doing further analysis. Also, the linear regression model will be easier to explain to a diverse audience.
+
+LM:   19409611507
+Tree: 38120812350
+NN:    4122397548
+
+
+
+\newpage
+## Problem 3:
+
+3.) Use the PR3_Dataset data: Y is the outcome variable and indicates the number of awards earned by students at a high school in a year, X1 is a categorical predictor variable with three levels indicating the type of program in which the students were enrolled. It is coded as 1 = “General”, 2 = “Academic” and 3 = “Social”,  and X2 is a continuous predictor variable and represents students’ scores on their math final exam. Answer the following questions: (20pts)
+
+ 
+a-)Build a model to predict the number of awards earned by students, is the model significant? (5pts)
+
+```{r problem 3 a}
+
+PR3.df = data.frame(read.csv("PR3_Dataset.csv"))
+
+#PR3.df
+
+Y = PR3.df$Y
+X1a = ifelse(PR3.df$X1 == 1, 1, 0)
+X1b = ifelse(PR3.df$X1 == 2, 1, 0)
+X2 =PR3.df$X2
+
+PR3.refit.df = data.frame(cbind(Y,X1a,X1b,X2))
+
+head(PR3.refit.df)
+
+PR3.refit.reg = lm(data=PR3.refit.df)
+
+summary(PR3.refit.reg)
+
+```
+
+## Problem 3 a:
+
+The model has an R^2 value of 0.2773, which shows a weak correlation of predictability, but can still say the model is significant, depending on the desired accuracy.
+
+
+b-) Find the predicted number awards earned by students given the independent variables below and calculate 99% confidence interval. (5pts)
+X1 = 2, X2 = 75
+
+
+```{r problem 3 b}
+
+predict.P3 = data.frame(cbind(X1a=0, X1b = 0, X2=75))
+
+predict(PR3.refit.reg, predict.P3, interval = "confidence", level = 0.99)
+
+#help(predict)
+
+```
+
+## Problem 3 b:
+
+Using the model, 1.608662 would be the predicted value with the confidence interval of 99%, the range would be 0.9423302 to 2.274994
+
+
+
+c-) Fit the negative binomial model and compare it the model built in part a, which model is better? (10pts)
+
+
+```{r problem 3 c}
+#help(glm)
+
+PR3.refit.dfY = PR3.refit.df
+
+PR3.refit.dfY$Y = PR3.refit.dfY$Y/(min(PR3.refit.dfY$Y)+max(PR3.refit.dfY$Y))
+
+lmod <- glm(Y ~ X1a+X1b+X2, family = binomial, PR3.refit.dfY)
+#summary(lmod)
+beta <- coef(lmod)
+cbind(beta,exp(beta))
+
+summary(lmod)
+
+```
+
+## Problem 3 c:
+
+Both models are trying to acheive something slightly different, with that being said, the bounds of the binomial model will ensure there is not negative amount of awards earned, but would also cap a student whose values exceeded the max.
+
+
+
+
+\newpage
+## Problem 4:
+
+4.) Use the PR4_Dataset data, Y is a dichotomous response variable. X2, X3, and X4 are categorical variables: X2 has 3 levels, X3 and X4 have 2 levels (create dummy variables for the categorical variables). Answer the questions below: (20pts)
+
+a-) Fit a regression model containing the predictor variables in first-order terms and interaction terms (e.g X1*X2) for all pairs of predictor variables. (5pts)
+
+```{r problem 4 a}
+PR4.df = data.frame(read.csv("PR4_Dataset.csv"))
+#PR4.df
+
+Y =  PR4.df$Y
+X1 = PR4.df$X1
+
+X2a = as.numeric(PR4.df$X2 == 1)
+X2b = as.numeric(PR4.df$X2 == 2)
+
+X3 = as.numeric(PR4.df$X3 == 1)
+X4 = as.numeric(PR4.df$X4 == 1)
+
+
+X1X2a = X1*X2a
+X1X2b = X1*X2b
+X1X3 = X1*X3
+X1X4 = X1*X4
+
+X2aX3 = X2a*X3
+X2aX4 = X2a*X4
+
+X2bX3 = X2b*X3
+X2bX4 = X2b*X4
+
+X3X4 = X3*X4
+
+PR4.refit.df = data.frame(cbind(Y,X1,X2a,X2b,X3,X4,X1X2a,X1X2b,X1X3,X1X4,X2aX3,X2aX4,X2bX3,X2bX4,X3X4))
+head(PR4.refit.df)
+
+
+lmod <- glm(Y ~ ., family = binomial, PR4.refit.df)
+summary(lmod)
+beta <- coef(lmod)
+cbind(beta,exp(beta))
+
+
+```
+## Problem 4 a:
+
+The model can be seen in the above code.
+
+
+b-) Use the likelihood ratio test to determine whether all interaction terms can be dropped from the regression model; State the alternatives, full and reduced models, decision rule, and conclusion. (5pts)
+
+
+```{r problem 4 b}
+lmodc<-glm(Y ~ X1 + X2a +X2b+X3+X4 , family = binomial, PR4.refit.df)
+anova(lmodc,lmod,test="Chi")
+
+```
+
+## Problem 4 b:
+
+Yes, all the interaction terms can be dropped from the model (>Chi = .9803)
+
+
+c.) Perform the backward variable selection method to find a model where all variables are significant and Conduct the Hosmer-Lemeshow goodness of fit test for the appropriateness of the logistic regression function by forming five groups. State the alternatives, decision rule, and conclusion. (5pts)
+
+```{r problem 4 c}
+#ols_step_both_p(lmod,prem=0.05,details=FALSE)
+
+lmodc<-glm(Y ~ X1 + X2a + X2b + X3 + X4 , family = binomial, PR4.refit.df)
+lmodX4 = glm(Y ~ X1 + X2a + X2b + X3 , family = binomial, PR4.refit.df)
+
+anova(lmodc,lmodX4,test="Chi")
+
+lmodc<-glm(Y ~ X1 + X2a + X2b + X3 , family = binomial, PR4.refit.df)
+lmodX3 = glm(Y ~ X1 + X2a + X2b , family = binomial, PR4.refit.df)
+
+anova(lmodc,lmodX3,test="Chi")
+
+lmodc<-glm(Y ~ X1 + X2a + X2b + X3 , family = binomial, PR4.refit.df)
+lmodX2b = glm(Y ~ X1 + X2a + X3 , family = binomial, PR4.refit.df)
+
+anova(lmodc,lmodX2b,test="Chi")
+
+lmodc<-glm(Y ~ X1 + X2a + X3 , family = binomial, PR4.refit.df)
+lmodX2a = glm(Y ~ X1 + X3 , family = binomial, PR4.refit.df)
+
+anova(lmodc,lmodX2a,test="Chi")
+
+lmodc<-glm(Y ~ X1 + X2a + X3 , family = binomial, PR4.refit.df)
+lmodX1 = glm(Y ~  X2a + X3 , family = binomial, PR4.refit.df)
+
+anova(lmodc,lmodX1,test="Chi")
+
+library(ResourceSelection)
+hoslem.test(lmodc$y,fitted(lmodc),g=5)
+
+```
+
+## Problem 4 c:
+
+Through backward selection, we will keep: X1, X2a, X3
+
+Ho: The model is good fit
+Ha: Model is not a good fit. 
+Accept Null, P value > 0.05 (P value = 0.253). The model is a good fit.
+
+
+
+d.)Use the model developed in part c and predict probability of Y for the following two cases and calculate 95% confidence interval. (5pts)
+
+X1    X2   X3   X4
+
+60      1      0      0     
+
+11      2      1      1  
+
+X2a = as.numeric(PR4.df$X2 == 1)
+
+
+```{r problem 4 d}
+
+
+dat<-data.frame(cbind(X1=60,X2a=1,X3=0))
+pre1=predict(lmodc,dat,type="link",se.fit=T)
+LowerCL = pre1$fit-1.96*pre1$se.fit; UpperCL = pre1$fit+1.96*pre1$se.fit
+Prediction = pre1$fit
+results = round(cbind(LowerCL,Prediction,UpperCL),3)
+ilogit(results)
+
+
+dat<-data.frame(cbind(X1=11,X2a=0,X3=1))
+pre1=predict(lmodc,dat,type="link",se.fit=T)
+LowerCL = pre1$fit-1.96*pre1$se.fit; UpperCL = pre1$fit+1.96*pre1$se.fit
+Prediction = pre1$fit
+results = round(cbind(LowerCL,Prediction,UpperCL),3)
+ilogit(results)
+
+
+```
+
+## Problem 4 d:
+
+The probability in case one is 88.99271% and 42.72696% in case 2. The 95% CI
+
+#    LowerCL Prediction   UpperCL
+# 0.7580467  0.8899274 0.9542616
+
+#    LowerCL Prediction   UpperCL
+# 0.2857736  0.4272696 0.5817594
+
+
+\newpage
+## Problem 5:
+
+5.) Use the PR4_Dataset data. All variables including Y are continuous variables.  Fit a regression model to predict Y. Is there a Multicollinearity in the data? Are the errors Normally distributed with constant variance? Are there any influential or outlier observations? check to see if auto-correlation persists in the data set, write null and alternatives hypothesis and calculate p value. (5 pts)
+
+
+```{r problem 5 part a}
+# I assume this problem meant to say PR5_Dataset, but included PR4 in case
+
+par(mfrow=c(2,2))
+PR4.df = data.frame(read.csv("PR4_Dataset.csv"))
+
+PR4.reg = lm(Y~., data=PR4.df)
+summary(PR4.reg)
+
+vif(PR4.reg)
+plot(PR4.reg)
+
+```
+
+```{r problem 5 part b}
+
+# I assume this problem meant to say PR5_Dataset
+
+par(mfrow=c(2,2))
+PR5.df = data.frame(read.csv("PR5_Dataset.csv"))
+
+PR5.reg = lm(Y~., data=PR5.df)
+summary(PR5.reg)
+
+vif(PR5.reg)
+plot(PR5.reg)
+
+```
+
+## Problem 5 Answer:
+
+There is no multicoliniearity in the dataset (all VIF values are below 5).
+
+The R^squared is .771, which would show as a decent prediction model.
+
+There appears to be one outlier in cooks distance (case 18) that could be investigated further.
